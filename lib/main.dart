@@ -1,39 +1,74 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:weather_app/screens/splash_screen.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:weather_app/utils/theme_manager.dart';
-import 'package:weather_app/utils/google_maps_config.dart';
-import 'package:google_maps_flutter_web/google_maps_flutter_web.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  runApp(const WeatherApp());
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
+class WeatherApp extends StatefulWidget {
+  const WeatherApp({Key? key}) : super(key: key);
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  State<WeatherApp> createState() => _WeatherAppState();
 }
 
-class _MyAppState extends State<MyApp> {
-  ThemeMode _themeMode = ThemeMode.light;
+class _WeatherAppState extends State<WeatherApp> with SingleTickerProviderStateMixin {
+  bool _isDarkMode = false;
+  late AnimationController _themeAnimationController;
+  late Animation<double> _themeAnimation;
 
-  void toggleTheme() {
+  @override
+  void initState() {
+    super.initState();
+    _themeAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _themeAnimation = CurvedAnimation(
+      parent: _themeAnimationController,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _themeAnimationController.dispose();
+    super.dispose();
+  }
+
+  void _toggleTheme() {
     setState(() {
-      _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+      _isDarkMode = !_isDarkMode;
+      if (_isDarkMode) {
+        _themeAnimationController.forward();
+      } else {
+        _themeAnimationController.reverse();
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Weather App',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeManager.lightTheme,
-      darkTheme: ThemeManager.darkTheme,
-      themeMode: _themeMode,
-      home: SplashScreen(toggleTheme: toggleTheme),
+    return AnimatedBuilder(
+      animation: _themeAnimation,
+      builder: (context, child) {
+        return MaterialApp(
+          title: 'Weather Explorer',
+          theme: ThemeManager.lightTheme,
+          darkTheme: ThemeManager.darkTheme,
+          themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          debugShowCheckedModeBanner: false,
+          home: SplashScreen(toggleTheme: _toggleTheme),
+        );
+      },
     );
   }
 }
