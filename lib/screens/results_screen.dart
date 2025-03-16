@@ -133,7 +133,9 @@ class ResultsScreen extends StatelessWidget {
             ),
           ],
         ),
+        
       ),
+
       // Ajout d'un FAB pour une action rapide
       floatingActionButton: FloatingActionButton(
         onPressed: () {

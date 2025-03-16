@@ -3,6 +3,7 @@ import 'package:weather_app/models/weather_model.dart';
 import 'package:weather_app/widgets/map_view.dart';
 import 'package:weather_app/widgets/weather_detail_card.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:weather_app/utils/weather_translations.dart'; // Importez la nouvelle classe d'utilitaires
 
 class CityDetailsScreen extends StatelessWidget {
   final WeatherModel weather;
@@ -16,6 +17,12 @@ class CityDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Traduire la description météo
+    final translatedDescription = translateWeatherCondition(weather.description);
+
+    // Obtenir une icône personnalisée basée sur la région et la température
+    final customIconCode = getCustomIconForRegion(weather.cityName, weather.temperature);
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -35,18 +42,18 @@ class CityDetailsScreen extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          // Background with weather-appropriate gradient
+          // Background avec gradient approprié pour la météo
           _buildWeatherBackground(context),
 
-          // Content
+          // Contenu
           SingleChildScrollView(
             child: SafeArea(
               child: Column(
                 children: [
                   const SizedBox(height: 16),
 
-                  // Hero image and temperature
-                  _buildWeatherHero(context)
+                  // Héro image et température
+                  _buildWeatherHero(context, translatedDescription, customIconCode)
                       .animate()
                       .fadeIn(duration: 800.ms)
                       .scale(
@@ -56,7 +63,7 @@ class CityDetailsScreen extends StatelessWidget {
                     curve: Curves.easeOutCubic,
                   ),
 
-                  // Weather details card
+                  // Carte météo détaillée
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -75,9 +82,9 @@ class CityDetailsScreen extends StatelessWidget {
                         const SizedBox(height: 12),
 
                         WeatherDetailCard(
-                          icon: 'https://openweathermap.org/img/wn/${weather.icon}@2x.png',
+                          icon: 'https://openweathermap.org/img/wn/${customIconCode}@2x.png',
                           temperature: weather.temperature,
-                          description: weather.description,
+                          description: translatedDescription,
                           humidity: weather.humidity,
                           windSpeed: weather.windSpeed,
                         )
@@ -87,8 +94,9 @@ class CityDetailsScreen extends StatelessWidget {
 
                         const SizedBox(height: 24),
 
+                        // Prévisions section (permutation avec localisation)
                         Text(
-                          'Localisation',
+                          'Prévisions à venir',
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -99,15 +107,16 @@ class CityDetailsScreen extends StatelessWidget {
 
                         const SizedBox(height: 12),
 
-                        _buildLocationInfo(context)
+                        _buildMockForecast(context)
                             .animate()
                             .fadeIn(delay: 800.ms, duration: 400.ms)
                             .moveY(begin: 20, end: 0, delay: 800.ms, duration: 400.ms),
 
                         const SizedBox(height: 20),
 
+                        // Localisation après prévisions
                         Text(
-                          'Carte',
+                          'Localisation',
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -115,11 +124,18 @@ class CityDetailsScreen extends StatelessWidget {
                             .animate()
                             .fadeIn(delay: 1000.ms, duration: 400.ms)
                             .moveX(begin: -20, end: 0, delay: 1000.ms, duration: 400.ms),
+
+                        const SizedBox(height: 12),
+
+                        _buildLocationInfo(context)
+                            .animate()
+                            .fadeIn(delay: 1200.ms, duration: 400.ms)
+                            .moveY(begin: 20, end: 0, delay: 1200.ms, duration: 400.ms),
                       ],
                     ),
                   ),
 
-                  // Map container
+                  // Conteneur de carte
                   Container(
                     margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                     height: 300,
@@ -141,75 +157,15 @@ class CityDetailsScreen extends StatelessWidget {
                     ),
                   )
                       .animate()
-                      .fadeIn(delay: 1200.ms, duration: 500.ms)
+                      .fadeIn(delay: 1400.ms, duration: 500.ms)
                       .scale(
                     begin: const Offset(0.95, 0.95),
                     end: const Offset(1, 1),
-                    delay: 1200.ms,
+                    delay: 1400.ms,
                     duration: 500.ms,
-                  ),
-
-                  // Forecast section (mockup - would implement with real API data)
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Prévisions à venir',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                            .animate()
-                            .fadeIn(delay: 1400.ms, duration: 400.ms)
-                            .moveX(begin: -20, end: 0, delay: 1400.ms, duration: 400.ms),
-
-                        const SizedBox(height: 16),
-
-                        _buildMockForecast(context)
-                            .animate()
-                            .fadeIn(delay: 1600.ms, duration: 400.ms),
-                      ],
-                    ),
                   ),
                 ],
               ),
-            ),
-          ),
-
-          // Fab for sharing or favorite
-          Positioned(
-            bottom: 20,
-            right: 20,
-            child: FloatingActionButton(
-              onPressed: () {
-                // Implémenter le partage ou l'ajout aux favoris
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${weather.cityName} ajouté aux favoris'),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    action: SnackBarAction(
-                      label: 'Voir',
-                      onPressed: () {},
-                    ),
-                  ),
-                );
-              },
-              child: const Icon(Icons.favorite_border),
-              tooltip: 'Ajouter aux favoris',
-            )
-                .animate()
-                .fadeIn(delay: 1800.ms, duration: 400.ms)
-                .scale(
-              begin: const Offset(0, 0),
-              end: const Offset(1, 1),
-              delay: 1800.ms,
-              duration: 400.ms,
-              curve: Curves.elasticOut,
             ),
           ),
         ],
@@ -224,7 +180,7 @@ class CityDetailsScreen extends StatelessWidget {
 
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    if (condition.contains('pluie') || condition.contains('rain')) {
+    if (condition.contains('pluie') || condition.contains('rain') || condition.contains('averses')) {
       gradientColors = isDarkMode
           ? [const Color(0xFF1A3347), const Color(0xFF0D253F)]
           : [const Color(0xFF4B6CB7), const Color(0xFF182848)];
@@ -232,11 +188,11 @@ class CityDetailsScreen extends StatelessWidget {
       gradientColors = isDarkMode
           ? [const Color(0xFF29323C), const Color(0xFF1C1C1C)]
           : [const Color(0xFFE8EAF6), const Color(0xFFC5CAE9)];
-    } else if (condition.contains('soleil') || condition.contains('sun') || condition.contains('clear')) {
+    } else if (condition.contains('soleil') || condition.contains('sun') || condition.contains('clear') || condition.contains('dégagé')) {
       gradientColors = isDarkMode
           ? [const Color(0xFF2E3F50), const Color(0xFF203A43)]
           : [const Color(0xFF56CCF2), const Color(0xFF2F80ED)];
-    } else if (condition.contains('nuage') || condition.contains('cloud')) {
+    } else if (condition.contains('nuage') || condition.contains('cloud') || condition.contains('couvert')) {
       gradientColors = isDarkMode
           ? [const Color(0xFF27333E), const Color(0xFF17212B)]
           : [const Color(0xFF8E9EAB), const Color(0xFFEEF2F3)];
@@ -259,7 +215,7 @@ class CityDetailsScreen extends StatelessWidget {
   }
 
   // Affichage héros de la température
-  Widget _buildWeatherHero(BuildContext context) {
+  Widget _buildWeatherHero(BuildContext context, String translatedDescription, String customIconCode) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(24),
@@ -288,7 +244,7 @@ class CityDetailsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                weather.description,
+                translatedDescription,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                   color: Theme.of(context).textTheme.titleMedium?.color?.withOpacity(0.7),
@@ -313,7 +269,7 @@ class CityDetailsScreen extends StatelessWidget {
               Hero(
                 tag: 'weather-icon-${weather.cityName}',
                 child: Image.network(
-                  'https://openweathermap.org/img/wn/${weather.icon}@2x.png',
+                  'https://openweathermap.org/img/wn/${customIconCode}@2x.png',
                   width: 80,
                   height: 80,
                   errorBuilder: (context, error, stackTrace) => const Icon(
@@ -390,17 +346,15 @@ class CityDetailsScreen extends StatelessWidget {
     );
   }
 
-  // Modification à apporter à la méthode _buildMockForecast dans CityDetailsScreen
-
   // Prévisions simulées (pour démonstration)
   Widget _buildMockForecast(BuildContext context) {
-    // Données factices pour les prévisions
+    // Données factices pour les prévisions avec traduction
     final List<Map<String, dynamic>> forecastData = [
-      {'day': 'Demain', 'temp': weather.temperature - 2 + (5 * 0.1), 'icon': 'partly_cloudy'},
-      {'day': 'Mer', 'temp': weather.temperature - 1 + (3 * 0.1), 'icon': 'rain'},
-      {'day': 'Jeu', 'temp': weather.temperature + 1 + (2 * 0.1), 'icon': 'sunny'},
-      {'day': 'Ven', 'temp': weather.temperature + 2 + (1 * 0.1), 'icon': 'sunny'},
-      {'day': 'Sam', 'temp': weather.temperature + 1, 'icon': 'partly_cloudy'},
+      {'day': 'Demain', 'temp': weather.temperature - 2 + (5 * 0.1), 'icon': _getForecastIcon(weather.cityName, weather.temperature - 2 + (5 * 0.1))},
+      {'day': 'Mer', 'temp': weather.temperature - 1 + (3 * 0.1), 'icon': _getForecastIcon(weather.cityName, weather.temperature - 1 + (3 * 0.1))},
+      {'day': 'Jeu', 'temp': weather.temperature + 1 + (2 * 0.1), 'icon': _getForecastIcon(weather.cityName, weather.temperature + 1 + (2 * 0.1))},
+      {'day': 'Ven', 'temp': weather.temperature + 2 + (1 * 0.1), 'icon': _getForecastIcon(weather.cityName, weather.temperature + 2 + (1 * 0.1))},
+      {'day': 'Sam', 'temp': weather.temperature + 1, 'icon': _getForecastIcon(weather.cityName, weather.temperature + 1)},
     ];
 
     // Icônes correspondantes
@@ -414,7 +368,7 @@ class CityDetailsScreen extends StatelessWidget {
     };
 
     return Container(
-      height: 130, // Augmenté de 120 à 130 pour donner plus d'espace
+      height: 130,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
@@ -443,7 +397,7 @@ class CityDetailsScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
-              mainAxisSize: MainAxisSize.min, // Ajouté pour empêcher l'expand automatique
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
@@ -452,13 +406,13 @@ class CityDetailsScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 6), // Réduit pour économiser de l'espace vertical
+                const SizedBox(height: 6),
                 Icon(
                   weatherIcons[forecast['icon']] ?? Icons.question_mark,
-                  color: _getIconColor(forecast['icon'], context),
-                  size: 26, // Légèrement réduit
+                  color: _getIconColor(forecast['icon'], forecast['temp'], context),
+                  size: 26,
                 ),
-                const SizedBox(height: 6), // Réduit pour économiser de l'espace vertical
+                const SizedBox(height: 6),
                 Text(
                   '${forecast['temp'].toStringAsFixed(1)}°',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -472,23 +426,54 @@ class CityDetailsScreen extends StatelessWidget {
       ),
     );
   }
-  Color _getIconColor(String weatherType, BuildContext context) {
+
+  // Obtenir l'icône de prévision en fonction de la région et de la température
+  String _getForecastIcon(String cityName, double temperature) {
+    // Logique d'attribution d'icônes adaptée à chaque région
+    if (cityName.toLowerCase().contains('saint-louis')) {
+      if (temperature < 25) return 'partly_cloudy';
+      return 'sunny';
+    }
+    else if (cityName.toLowerCase().contains('dakar')) {
+      if (temperature < 27) return 'partly_cloudy';
+      if (temperature < 30) return 'sunny';
+      return 'rain';
+    }
+    else if (cityName.toLowerCase().contains('matam') || cityName.toLowerCase().contains('tambacounda')) {
+      if (temperature < 30) return 'sunny';
+      if (temperature < 35) return 'partly_cloudy';
+      return 'thunderstorm';
+    }
+    else if (cityName.toLowerCase().contains('ziguinchor') || cityName.toLowerCase().contains('kolda')) {
+      if (temperature < 28) return 'partly_cloudy';
+      if (temperature < 33) return 'cloudy';
+      return 'rain';
+    }
+
+    // Par défaut basé sur la température
+    if (temperature < 25) return 'partly_cloudy';
+    if (temperature < 30) return 'sunny';
+    if (temperature < 35) return 'cloudy';
+    return 'thunderstorm';
+  }
+
+  Color _getIconColor(String weatherType, double temperature, BuildContext context) {
+    // Couleurs personnalisées en fonction du type de temps et de la température
     switch (weatherType) {
       case 'sunny':
-        return Colors.orange;
+        return temperature > 32 ? Colors.deepOrange : Colors.orange;
       case 'partly_cloudy':
-        return Colors.amber;
+        return temperature > 30 ? Colors.amber : Colors.amber.shade300;
       case 'cloudy':
         return Colors.grey;
       case 'rain':
-        return Colors.blue;
+        return temperature > 28 ? Colors.indigo : Colors.blue;
       case 'thunderstorm':
         return Colors.purple;
       case 'snow':
         return Colors.lightBlue;
       default:
-        return Theme.of(context).colorScheme.primary;
+        return getCustomIconColor(weather.cityName, temperature);
     }
   }
 }
-

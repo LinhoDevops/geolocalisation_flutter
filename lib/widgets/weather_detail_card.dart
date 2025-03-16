@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:weather_app/utils/weather_translations.dart'; // Importez la nouvelle classe d'utilitaires
 
 class WeatherDetailCard extends StatelessWidget {
   final String icon;
@@ -7,6 +8,8 @@ class WeatherDetailCard extends StatelessWidget {
   final String description;
   final double humidity;
   final double windSpeed;
+  // Ajouter le nom de la ville pour la personnalisation par région
+  final String cityName;
 
   const WeatherDetailCard({
     Key? key,
@@ -15,6 +18,7 @@ class WeatherDetailCard extends StatelessWidget {
     required this.description,
     required this.humidity,
     required this.windSpeed,
+    this.cityName = '',  // Valeur par défaut vide
   }) : super(key: key);
 
   @override
@@ -22,7 +26,10 @@ class WeatherDetailCard extends StatelessWidget {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     final primaryColor = Theme.of(context).colorScheme.primary;
-    final secondaryColor = Theme.of(context).colorScheme.secondary;
+    // Utiliser la couleur personnalisée de la région si disponible
+    final regionColor = cityName.isNotEmpty
+        ? getCustomIconColor(cityName, temperature)
+        : primaryColor;
 
     // Déterminer des indices de confort basés sur les données
     final String tempFeel = _getTemperatureFeeling(temperature);
@@ -47,7 +54,7 @@ class WeatherDetailCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             isDarkMode ? Color(0xFF2D3748).withOpacity(0.9) : Colors.white,
-            isDarkMode ? Color(0xFF1A202C).withOpacity(0.9) : primaryColor.withOpacity(0.05),
+            isDarkMode ? Color(0xFF1A202C).withOpacity(0.9) : regionColor.withOpacity(0.05),
           ],
         ),
       ),
@@ -64,7 +71,7 @@ class WeatherDetailCard extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.thermostat_outlined,
-                          color: primaryColor,
+                          color: regionColor, // Utiliser la couleur de région
                           size: 24,
                         ),
                         const SizedBox(width: 8),
@@ -89,7 +96,7 @@ class WeatherDetailCard extends StatelessWidget {
                       tempFeel,
                       style: TextStyle(
                         fontSize: 14,
-                        color: _getTemperatureColor(temperature, context),
+                        color: _getTemperatureColor(temperature, context, regionColor),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -124,23 +131,25 @@ class WeatherDetailCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
             decoration: BoxDecoration(
               color: isDarkMode
-                  ? primaryColor.withOpacity(0.1)
-                  : primaryColor.withOpacity(0.05),
+                  ? regionColor.withOpacity(0.1)
+                  : regionColor.withOpacity(0.05),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.info_outline,
                   size: 18,
+                  color: regionColor.withOpacity(0.8), // Utiliser la couleur de région
                 ),
                 const SizedBox(width: 8),
                 Text(
                   description,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
+                    color: isDarkMode ? Colors.white : Colors.black87,
                   ),
                 ),
               ],
@@ -158,7 +167,7 @@ class WeatherDetailCard extends StatelessWidget {
                 'Humidité',
                 '${humidity.toStringAsFixed(0)}%',
                 humidityLevel,
-                _getHumidityColor(humidity, context),
+                _getHumidityColor(humidity, context, regionColor),
               ),
               _buildDetailColumn(
                 context,
@@ -166,7 +175,7 @@ class WeatherDetailCard extends StatelessWidget {
                 'Vent',
                 '${windSpeed.toStringAsFixed(1)} m/s',
                 windLevel,
-                _getWindColor(windSpeed, context),
+                _getWindColor(windSpeed, context, regionColor),
               ),
               _buildDetailColumn(
                 context,
@@ -174,7 +183,7 @@ class WeatherDetailCard extends StatelessWidget {
                 'Ressenti',
                 '${(temperature - 1 + (humidity * 0.01)).toStringAsFixed(1)}°',
                 'Apparent',
-                primaryColor,
+                regionColor,
               ),
             ],
           ),
@@ -236,7 +245,7 @@ class WeatherDetailCard extends StatelessWidget {
     );
   }
 
-  // Helpers for weather comfort indicators
+  // Helpers pour les indicateurs de confort météo - traductions en français
   String _getTemperatureFeeling(double temp) {
     if (temp < 0) return 'Très froid';
     if (temp < 10) return 'Froid';
@@ -262,28 +271,41 @@ class WeatherDetailCard extends StatelessWidget {
     return 'Très fort';
   }
 
-  Color _getTemperatureColor(double temp, BuildContext context) {
-    if (temp < 0) return Colors.indigo;
-    if (temp < 10) return Colors.blue;
-    if (temp < 20) return Theme.of(context).colorScheme.primary;
-    if (temp < 25) return Colors.green;
-    if (temp < 30) return Colors.orange;
-    return Colors.red;
+  Color _getTemperatureColor(double temp, BuildContext context, Color regionColor) {
+    // Si nous avons une région, tenir compte de sa couleur caractéristique
+    if (cityName.isNotEmpty) {
+      if (temp < 0) return Color.lerp(Colors.indigo, regionColor, 0.3) ?? Colors.indigo;
+      if (temp < 10) return Color.lerp(Colors.blue, regionColor, 0.3) ?? Colors.blue;
+      if (temp < 20) return regionColor;
+      if (temp < 25) return Color.lerp(Colors.green, regionColor, 0.3) ?? Colors.green;
+      if (temp < 30) return Color.lerp(Colors.orange, regionColor, 0.3) ?? Colors.orange;
+      return Color.lerp(Colors.red, regionColor, 0.2) ?? Colors.red;
+    } else {
+      // Comportement par défaut
+      if (temp < 0) return Colors.indigo;
+      if (temp < 10) return Colors.blue;
+      if (temp < 20) return Theme.of(context).colorScheme.primary;
+      if (temp < 25) return Colors.green;
+      if (temp < 30) return Colors.orange;
+      return Colors.red;
+    }
   }
 
-  Color _getHumidityColor(double humidity, BuildContext context) {
-    if (humidity < 30) return Colors.orange;
-    if (humidity < 50) return Colors.green;
-    if (humidity < 70) return Theme.of(context).colorScheme.primary;
-    if (humidity < 85) return Colors.lightBlue;
-    return Colors.blue;
+  Color _getHumidityColor(double humidity, BuildContext context, Color regionColor) {
+    // Incorporer légèrement la couleur de la région
+    if (humidity < 30) return Color.lerp(Colors.orange, regionColor, 0.2) ?? Colors.orange;
+    if (humidity < 50) return Color.lerp(Colors.green, regionColor, 0.2) ?? Colors.green;
+    if (humidity < 70) return regionColor;
+    if (humidity < 85) return Color.lerp(Colors.lightBlue, regionColor, 0.2) ?? Colors.lightBlue;
+    return Color.lerp(Colors.blue, regionColor, 0.2) ?? Colors.blue;
   }
 
-  Color _getWindColor(double windSpeed, BuildContext context) {
-    if (windSpeed < 2) return Colors.green;
-    if (windSpeed < 6) return Theme.of(context).colorScheme.primary;
-    if (windSpeed < 12) return Colors.orange;
-    if (windSpeed < 20) return Colors.deepOrange;
-    return Colors.red;
+  Color _getWindColor(double windSpeed, BuildContext context, Color regionColor) {
+    // Incorporer légèrement la couleur de la région
+    if (windSpeed < 2) return Color.lerp(Colors.green, regionColor, 0.2) ?? Colors.green;
+    if (windSpeed < 6) return regionColor;
+    if (windSpeed < 12) return Color.lerp(Colors.orange, regionColor, 0.2) ?? Colors.orange;
+    if (windSpeed < 20) return Color.lerp(Colors.deepOrange, regionColor, 0.2) ?? Colors.deepOrange;
+    return Color.lerp(Colors.red, regionColor, 0.2) ?? Colors.red;
   }
 }

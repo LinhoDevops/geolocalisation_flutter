@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:weather_app/models/weather_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:weather_app/utils/weather_translations.dart'; // Importez la nouvelle classe d'utilitaires
 
 class WeatherCard extends StatefulWidget {
   final WeatherModel weather;
@@ -42,38 +43,44 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    // Traduire la description météo
+    final translatedDescription = translateWeatherCondition(widget.weather.description);
+
+    // Obtenir une icône personnalisée basée sur la région
+    final customIconCode = getCustomIconForRegion(widget.weather.cityName, widget.weather.temperature);
+
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
     final secondaryColor = Theme.of(context).colorScheme.secondary;
 
     // Météo conditions et couleurs correspondantes
-    final String condition = widget.weather.description.toLowerCase();
+    final String condition = translatedDescription.toLowerCase();
     Color gradientStartColor;
     Color gradientEndColor;
 
     // Personnaliser la couleur en fonction des conditions météo
-    if (condition.contains('pluie') || condition.contains('rain')) {
+    if (condition.contains('pluie') || condition.contains('averse')) {
       gradientStartColor = isDarkMode
           ? const Color(0xFF256997).withOpacity(0.8)
           : const Color(0xFF0C0C0C).withOpacity(0.8);
       gradientEndColor = isDarkMode
           ? const Color(0xFF95D1F6).withOpacity(0.8)
           : const Color(0xFF7FC0E8).withOpacity(0.8);
-    } else if (condition.contains('neige') || condition.contains('snow')) {
+    } else if (condition.contains('neige')) {
       gradientStartColor = isDarkMode
           ? const Color(0xFFC0CDED).withOpacity(0.8)
           : const Color(0xFF3D86B6).withOpacity(0.8);
       gradientEndColor = isDarkMode
           ? const Color(0xFF79ACF1).withOpacity(0.8)
           : const Color(0xFF66BAF4).withOpacity(0.8);
-    } else if (condition.contains('soleil') || condition.contains('sun') || condition.contains('clear')) {
+    } else if (condition.contains('soleil') || condition.contains('dégagé') || condition.contains('clair')) {
       gradientStartColor = isDarkMode
           ? const Color(0xFF45525E).withOpacity(0.8)
           : const Color(0xFF3D86B6).withOpacity(0.8);
       gradientEndColor = isDarkMode
           ? const Color(0xFF97D0DA).withOpacity(0.8)
           : const Color(0xFF374857).withOpacity(0.8);
-    } else if (condition.contains('nuage') || condition.contains('cloud')) {
+    } else if (condition.contains('nuage') || condition.contains('couvert')) {
       gradientStartColor = isDarkMode
           ? const Color(0xFF27333E).withOpacity(0.8)
           : const Color(0xFFAFD3DC).withOpacity(0.8);
@@ -88,6 +95,13 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
           ? Colors.grey[900]!.withOpacity(0.8)
           : Colors.grey[100]!.withOpacity(0.8);
     }
+
+    // Personnaliser les couleurs en fonction de la région
+    Color regionColor = getCustomIconColor(widget.weather.cityName, widget.weather.temperature);
+
+    // Ajuster légèrement les couleurs de gradient pour refléter la région
+    gradientStartColor = Color.lerp(gradientStartColor, regionColor, 0.3) ?? gradientStartColor;
+    gradientEndColor = Color.lerp(gradientEndColor, regionColor.withOpacity(0.7), 0.2) ?? gradientEndColor;
 
     return AnimatedBuilder(
       animation: _controller,
@@ -111,12 +125,12 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
               margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
               elevation: _isHovered ? 8 : 4,
               shadowColor: _isHovered
-                  ? Theme.of(context).colorScheme.primary.withOpacity(0.4)
+                  ? regionColor.withOpacity(0.4)  // Utiliser la couleur de région pour l'ombre
                   : Colors.black26,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
                 side: _isHovered
-                    ? BorderSide(color: primaryColor.withOpacity(0.5), width: 1.5)
+                    ? BorderSide(color: regionColor.withOpacity(0.5), width: 1.5)  // Utiliser la couleur de région pour la bordure
                     : BorderSide.none,
               ),
               child: Container(
@@ -143,7 +157,7 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
                         Hero(
                           tag: 'weather-icon-${widget.weather.cityName}',
                           child: Image.network(
-                            'https://openweathermap.org/img/wn/${widget.weather.icon}@2x.png',
+                            'https://openweathermap.org/img/wn/${customIconCode}@2x.png',  // Utiliser l'icône personnalisée
                             width: 70,
                             height: 70,
                             errorBuilder: (context, error, stackTrace) => const Icon(
@@ -166,7 +180,7 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                widget.weather.description,
+                                translatedDescription,  // Utiliser la description traduite
                                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                   color: (isDarkMode ? Colors.white : Colors.black87).withOpacity(0.8),
                                 ),
@@ -176,7 +190,7 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
                                 children: [
                                   Icon(
                                     Icons.thermostat,
-                                    color: isDarkMode ? Colors.lightBlue : Colors.blue,
+                                    color: regionColor,  // Utiliser la couleur de région pour l'icône
                                     size: 20,
                                   ),
                                   const SizedBox(width: 4),
@@ -189,7 +203,7 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
                                   const SizedBox(width: 16),
                                   Icon(
                                     Icons.water_drop,
-                                    color: isDarkMode ? Colors.lightBlue : Colors.blue,
+                                    color: regionColor,  // Utiliser la couleur de région pour l'icône
                                     size: 20,
                                   ),
                                   const SizedBox(width: 4),
@@ -208,7 +222,7 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
                           duration: const Duration(milliseconds: 200),
                           decoration: BoxDecoration(
                             color: _isHovered
-                                ? primaryColor
+                                ? regionColor  // Utiliser la couleur de région pour le bouton
                                 : Colors.transparent,
                             shape: BoxShape.circle,
                           ),
@@ -217,7 +231,7 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
                             Icons.arrow_forward_ios,
                             color: _isHovered
                                 ? Colors.white
-                                : Theme.of(context).colorScheme.secondary,
+                                : regionColor.withOpacity(0.7),  // Utiliser la couleur de région pour l'icône
                             size: 18,
                           ),
                         ),
