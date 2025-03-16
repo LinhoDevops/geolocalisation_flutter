@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-// Fonction de traduction des conditions météo
 String translateWeatherCondition(String englishCondition) {
   final Map<String, String> translations = {
     'clear sky': 'ciel dégagé',
@@ -37,49 +36,40 @@ String translateWeatherCondition(String englishCondition) {
   return translations[englishCondition.toLowerCase()] ?? englishCondition;
 }
 
-// Fonction pour obtenir une icône personnalisée en fonction de la région et de la température
 String getCustomIconForRegion(String cityName, double temperature) {
-  // Icônes personnalisées pour différentes régions
   if (cityName.toLowerCase().contains('saint-louis')) {
-    // Saint-Louis: plus frais et côtier
-    if (temperature < 20) return '01d'; // ciel dégagé
-    if (temperature < 25) return '02d'; // quelques nuages
-    if (temperature < 30) return '03d'; // nuages épars
-    return '04d'; // ciel couvert
+    if (temperature < 20) return '01d';
+    if (temperature < 25) return '02d';
+    if (temperature < 30) return '03d';
+    return '04d'; //
   }
   else if (cityName.toLowerCase().contains('dakar')) {
-    // Dakar: côtier mais plus chaud
-    if (temperature < 22) return '01d'; // ciel dégagé
-    if (temperature < 27) return '02d'; // quelques nuages
-    if (temperature < 32) return '09d'; // averses légères
-    return '10d'; // pluie
+    if (temperature < 22) return '01d';
+    if (temperature < 27) return '02d';
+    if (temperature < 32) return '09d';
+    return '10d';
   }
   else if (cityName.toLowerCase().contains('matam') || cityName.toLowerCase().contains('tambacounda')) {
-    // Régions intérieures chaudes
-    if (temperature < 25) return '01d'; // ciel dégagé
-    if (temperature < 30) return '01d'; // ciel dégagé (encore)
-    if (temperature < 35) return '50d'; // brume (dust)
-    return '11d'; // orage
+    if (temperature < 25) return '01d';
+    if (temperature < 30) return '01d';
+    if (temperature < 35) return '50d';
+    return '11d';
   }
   else if (cityName.toLowerCase().contains('ziguinchor') || cityName.toLowerCase().contains('kolda')) {
-    // Régions sud plus humides
-    if (temperature < 23) return '02d'; // quelques nuages
-    if (temperature < 28) return '03d'; // nuages épars
-    if (temperature < 33) return '09d'; // averses
-    return '10d'; // pluie
+    if (temperature < 23) return '02d';
+    if (temperature < 28) return '03d';
+    if (temperature < 33) return '09d';
+    return '10d';
   }
 
-  // Icône par défaut basée sur la température pour les autres régions
-  if (temperature < 20) return '01d'; // ciel dégagé
-  if (temperature < 25) return '02d'; // quelques nuages
-  if (temperature < 30) return '03d'; // nuages épars
-  if (temperature < 35) return '04d'; // ciel couvert
-  return '11d'; // orage
+  if (temperature < 20) return '01d';
+  if (temperature < 25) return '02d';
+  if (temperature < 30) return '03d';
+  if (temperature < 35) return '04d';
+  return '11d';
 }
 
-// Sélecteur de couleur personnalisé pour les icônes météo
 Color getCustomIconColor(String cityName, double temperature) {
-  // Couleurs personnalisées pour différentes régions
   if (cityName.toLowerCase().contains('saint-louis')) {
     return Colors.blue;
   }
@@ -93,7 +83,6 @@ Color getCustomIconColor(String cityName, double temperature) {
     return Colors.green;
   }
 
-  // Couleur par défaut basée sur la température pour les autres régions
   if (temperature < 20) return Colors.blue;
   if (temperature < 25) return Colors.teal;
   if (temperature < 30) return Colors.orange;

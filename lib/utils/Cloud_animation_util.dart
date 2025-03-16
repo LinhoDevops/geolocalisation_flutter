@@ -2,18 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:math' as math;
 
-/// Classe utilitaire pour créer l'animation de nuages
-/// Peut être utilisée à partir de n'importe quel écran
 class CloudAnimationUtil {
 
-  /// Crée une animation de nuages pour l'arrière-plan
   static Widget buildAnimatedCloudsBackground(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Stack(
       alignment: Alignment.center,
       children: [
-        // Fond avec gradient dynamique
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -31,11 +27,9 @@ class CloudAnimationUtil {
             ),
           ),
         ),
-
-        // Première couche de nuages
         Opacity(
           opacity: 0.7,
-          child: _buildCloudShape(
+          child: buildCloudShape(
             context: context,
             size: 100,
             opacity: isDarkMode ? 0.4 : 0.7,
@@ -43,14 +37,12 @@ class CloudAnimationUtil {
             topOffset: 0,
           ),
         ),
-
-        // Deuxième couche de nuages
         Positioned(
           top: 30,
           left: 20,
           child: Opacity(
             opacity: 0.5,
-            child: _buildCloudShape(
+            child: buildCloudShape(
               context: context,
               size: 60,
               opacity: isDarkMode ? 0.3 : 0.6,
@@ -59,14 +51,12 @@ class CloudAnimationUtil {
             ),
           ),
         ),
-
-        // Troisième couche de nuages (en direction opposée)
         Positioned(
           bottom: 20,
           right: 0,
           child: Opacity(
             opacity: 0.6,
-            child: _buildCloudShape(
+            child: buildCloudShape(
               context: context,
               size: 80,
               opacity: isDarkMode ? 0.35 : 0.65,
@@ -80,8 +70,7 @@ class CloudAnimationUtil {
     );
   }
 
-  /// Construit une forme de nuage plus complexe plutôt qu'une simple icône
-  static Widget _buildCloudShape({
+  static Widget buildCloudShape({
     required BuildContext context,
     required double size,
     required double opacity,
@@ -95,7 +84,6 @@ class CloudAnimationUtil {
     return Stack(
       alignment: Alignment.center,
       children: [
-        // Base du nuage (forme principale)
         ClipPath(
           clipper: CloudClipper(),
           child: Container(
@@ -119,17 +107,12 @@ class CloudAnimationUtil {
   }
 }
 
-// Clipper personnalisé pour créer une forme de nuage
 class CloudClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final path = Path();
-    final random = math.Random(42); // Seed fixe pour cohérence
-
-    // Point de départ en bas à gauche
+    final random = math.Random(42);
     path.moveTo(size.width * 0.1, size.height * 0.8);
-
-    // Générer des points aléatoires pour le haut du nuage
     for (int i = 1; i < 8; i++) {
       final xFactor = 0.1 + (i * 0.1);
       final yOffset = random.nextDouble() * 0.4;
@@ -141,10 +124,8 @@ class CloudClipper extends CustomClipper<Path> {
       );
     }
 
-    // Fermer le chemin
     path.lineTo(size.width * 0.9, size.height * 0.8);
     path.close();
-
     return path;
   }
 

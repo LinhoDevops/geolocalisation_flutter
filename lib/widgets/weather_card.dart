@@ -18,47 +18,41 @@ class WeatherCard extends StatefulWidget {
 }
 
 class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStateMixin {
-  bool _isHovered = false;
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
+  bool isHovered = false;
+  late AnimationController controller;
+  late Animation<double> scaleAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
 
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.03).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    scaleAnimation = Tween<double>(begin: 1.0, end: 1.03).animate(
+      CurvedAnimation(parent: controller, curve: Curves.easeInOut),
     );
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Traduire la description météo
+
     final translatedDescription = translateWeatherCondition(widget.weather.description);
-
-    // Obtenir une icône personnalisée basée sur la région
     final customIconCode = getCustomIconForRegion(widget.weather.cityName, widget.weather.temperature);
-
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
     final secondaryColor = Theme.of(context).colorScheme.secondary;
-
-    // Météo conditions et couleurs correspondantes
     final String condition = translatedDescription.toLowerCase();
     Color gradientStartColor;
     Color gradientEndColor;
 
-    // Personnaliser la couleur en fonction des conditions météo
     if (condition.contains('pluie') || condition.contains('averse')) {
       gradientStartColor = isDarkMode
           ? const Color(0xFF256997).withOpacity(0.8)
@@ -96,40 +90,37 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
           : Colors.grey[100]!.withOpacity(0.8);
     }
 
-    // Personnaliser les couleurs en fonction de la région
     Color regionColor = getCustomIconColor(widget.weather.cityName, widget.weather.temperature);
-
-    // Ajuster légèrement les couleurs de gradient pour refléter la région
     gradientStartColor = Color.lerp(gradientStartColor, regionColor, 0.3) ?? gradientStartColor;
     gradientEndColor = Color.lerp(gradientEndColor, regionColor.withOpacity(0.7), 0.2) ?? gradientEndColor;
 
     return AnimatedBuilder(
-      animation: _controller,
+      animation: controller,
       builder: (context, child) {
         return Transform.scale(
-          scale: _scaleAnimation.value,
+          scale: scaleAnimation.value,
           child: MouseRegion(
             onEnter: (_) {
               setState(() {
-                _isHovered = true;
-                _controller.forward();
+                isHovered = true;
+                controller.forward();
               });
             },
             onExit: (_) {
               setState(() {
-                _isHovered = false;
-                _controller.reverse();
+                isHovered = false;
+                controller.reverse();
               });
             },
             child: Card(
               margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-              elevation: _isHovered ? 8 : 4,
-              shadowColor: _isHovered
+              elevation: isHovered ? 8 : 4,
+              shadowColor: isHovered
                   ? regionColor.withOpacity(0.4)  // Utiliser la couleur de région pour l'ombre
                   : Colors.black26,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: _isHovered
+                side: isHovered
                     ? BorderSide(color: regionColor.withOpacity(0.5), width: 1.5)  // Utiliser la couleur de région pour la bordure
                     : BorderSide.none,
               ),
@@ -157,7 +148,7 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
                         Hero(
                           tag: 'weather-icon-${widget.weather.cityName}',
                           child: Image.network(
-                            'https://openweathermap.org/img/wn/${customIconCode}@2x.png',  // Utiliser l'icône personnalisée
+                            'https://openweathermap.org/img/wn/${customIconCode}@2x.png',
                             width: 70,
                             height: 70,
                             errorBuilder: (context, error, stackTrace) => const Icon(
@@ -180,7 +171,7 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                translatedDescription,  // Utiliser la description traduite
+                                translatedDescription,
                                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                   color: (isDarkMode ? Colors.white : Colors.black87).withOpacity(0.8),
                                 ),
@@ -190,7 +181,7 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
                                 children: [
                                   Icon(
                                     Icons.thermostat,
-                                    color: regionColor,  // Utiliser la couleur de région pour l'icône
+                                    color: regionColor,
                                     size: 20,
                                   ),
                                   const SizedBox(width: 4),
@@ -203,7 +194,7 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
                                   const SizedBox(width: 16),
                                   Icon(
                                     Icons.water_drop,
-                                    color: regionColor,  // Utiliser la couleur de région pour l'icône
+                                    color: regionColor,
                                     size: 20,
                                   ),
                                   const SizedBox(width: 4),
@@ -221,17 +212,17 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
                         AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           decoration: BoxDecoration(
-                            color: _isHovered
-                                ? regionColor  // Utiliser la couleur de région pour le bouton
+                            color: isHovered
+                                ? regionColor
                                 : Colors.transparent,
                             shape: BoxShape.circle,
                           ),
-                          padding: EdgeInsets.all(_isHovered ? 8.0 : 0),
+                          padding: EdgeInsets.all(isHovered ? 8.0 : 0),
                           child: Icon(
                             Icons.arrow_forward_ios,
-                            color: _isHovered
+                            color: isHovered
                                 ? Colors.white
-                                : regionColor.withOpacity(0.7),  // Utiliser la couleur de région pour l'icône
+                                : regionColor.withOpacity(0.7),
                             size: 18,
                           ),
                         ),

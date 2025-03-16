@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:weather_app/models/weather_model.dart';
 import 'package:weather_app/screens/results_screen.dart';
 import 'package:weather_app/services/weather_service.dart';
-import 'package:weather_app/utils/CloudAnimationUtil.dart';
+import 'package:weather_app/utils/Cloud_animation_util.dart';
 import 'package:weather_app/widgets/progress_bar.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -16,7 +16,6 @@ class LoadingScreen extends StatefulWidget {
   State<LoadingScreen> createState() => _LoadingScreenState();
 }
 
-// Route de transition personnalisée
 class FadeScaleRoute extends PageRouteBuilder {
   final Widget page;
 
@@ -26,16 +25,10 @@ class FadeScaleRoute extends PageRouteBuilder {
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       var curve = Curves.easeOutCubic;
       var curveTween = CurveTween(curve: curve);
-
       var fadeTween = Tween<double>(begin: 0.0, end: 1.0);
-      var fadeAnimation = fadeTween.animate(
-        animation.drive(curveTween),
-      );
-
+      var fadeAnimation = fadeTween.animate(animation.drive(curveTween),);
       var scaleTween = Tween<double>(begin: 0.92, end: 1.0);
-      var scaleAnimation = scaleTween.animate(
-        animation.drive(curveTween),
-      );
+      var scaleAnimation = scaleTween.animate(animation.drive(curveTween),);
 
       return FadeTransition(
         opacity: fadeAnimation,
@@ -50,210 +43,167 @@ class FadeScaleRoute extends PageRouteBuilder {
 }
 
 class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProviderStateMixin {
-  final WeatherService _weatherService = WeatherService();
+  final WeatherService weatherService = WeatherService();
 
-  // Liste modifiée pour utiliser les régions du Sénégal
-  final List<String> _cities = ['Dakar', 'Saint-Louis', 'Thies', 'Diourbel', 'Ziguinchor'];
+  final List<String> cities = ['Dakar', 'Saint-Louis', 'Thies', 'Diourbel', 'Ziguinchor'];
 
-  final List<String> _loadingMessages = [
+  final List<String> loadingMessages = [
     'Nous téléchargeons les données...',
     'C\'est presque fini...',
     'Plus que quelques secondes avant d\'avoir le résultat...',
-    // 'Analyse des conditions météorologiques...',
-    // 'Préparation de votre expérience météo...',
   ];
 
-  List<WeatherModel> _weatherData = [];
-  double _progress = 0.0;
-  String _currentMessage = 'Nous téléchargeons les données...';
-  int _messageIndex = 0;
-  bool _isLoading = true;
-  bool _hasError = false;
-  String _errorMessage = '';
-  String _currentCity = '';
-  late AnimationController _pulseController;
-  bool _isDarkMode = false;
+  List<WeatherModel> weatherData = [];
+  double progress = 0.0;
+  String currentMessage = 'Nous téléchargeons les données...';
+  int messageIndex = 0;
+  bool isLoading = true;
+  bool hasError = false;
+  String errorMessage = '';
+  String currentCity = '';
+  late AnimationController pulseController;
+  bool isDarkMode = false;
 
-  // Pour suivre l'état de chargement de chaque ville
-  Map<String, int> _cityLoadingStatus = {}; // 0: pas commencé, 1: en cours, 2: terminé
+  Map<String, int> cityLoadingStatus = {};
 
-  // Délai de validation pour les villes
-  final Duration _validationDelay = const Duration(milliseconds: 1500);
+  final Duration validationDelay = const Duration(milliseconds: 1500);
 
   @override
   void initState() {
     super.initState();
-    _isDarkMode = false; // Définir en fonction du thème actuel
-    _pulseController = AnimationController(
+    isDarkMode = false;
+    pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
 
-    // Initialiser le statut de chargement de toutes les villes
-    for (var city in _cities) {
-      _cityLoadingStatus[city] = 0;
+    for (var city in cities) {
+      cityLoadingStatus[city] = 0;
     }
 
-    _startLoading();
+    startLoading();
   }
 
   @override
   void dispose() {
-    _pulseController.dispose();
+    pulseController.dispose();
     super.dispose();
   }
 
-  void _startLoading() {
-    // Simulation de progression plus réaliste avec accélération
+  void startLoading() {
     int tickCount = 0;
     Timer.periodic(const Duration(milliseconds: 100), (progressTimer) {
       tickCount++;
-      if (_progress >= 1.0) {
+      if (progress >= 1.0) {
         progressTimer.cancel();
-        if (_weatherData.isNotEmpty) {
+        if (weatherData.isNotEmpty) {
           setState(() {
-            _isLoading = false;
+            isLoading = false;
           });
-          _navigateToResults();
+          navigateToResults();
         }
       } else {
         double increment;
-        // Calculer le progrès en fonction du nombre de villes chargées
-        int citiesLoaded = _weatherData.length;
-        double targetProgress = citiesLoaded / _cities.length;
+        int citiesLoaded = weatherData.length;
+        double targetProgress = citiesLoaded / cities.length;
 
-        // Accélération douce, puis ralentissement vers la fin
-        if (_progress < targetProgress) {
+        if (progress < targetProgress) {
           increment = 0.005 + (tickCount * 0.0001);
-          // Limiter la progression pour qu'elle ne dépasse pas la cible
-          if (_progress + increment > targetProgress && citiesLoaded < _cities.length) {
-            increment = (targetProgress - _progress) / 10; // progression graduelle vers la cible
+          if (progress + increment > targetProgress && citiesLoaded < cities.length) {
+            increment = (targetProgress - progress) / 10;
           }
-        } else if (_progress < 1.0 && citiesLoaded == _cities.length) {
-          // Terminer rapidement une fois toutes les villes chargées
+        } else if (progress < 1.0 && citiesLoaded == cities.length) {
           increment = 0.01;
         } else {
-          increment = 0; // Attendre le chargement de plus de villes
+          increment = 0;
         }
 
         setState(() {
-          _progress += increment;
+          progress += increment;
         });
       }
     });
 
-    // Rotation des messages avec animation
     Timer.periodic(const Duration(seconds: 3), (messageTimer) {
-      if (_progress >= 1.0) {
+      if (progress >= 1.0) {
         messageTimer.cancel();
       } else {
         setState(() {
-          _messageIndex = (_messageIndex + 1) % _loadingMessages.length;
-          _currentMessage = _loadingMessages[_messageIndex];
+          messageIndex = (messageIndex + 1) % loadingMessages.length;
+          currentMessage = loadingMessages[messageIndex];
         });
       }
     });
 
-    // Simulation du chargement des données pour chaque ville
-    _loadCitiesSequentially();
+    loadCitiesSequentially();
   }
 
-  Future<void> _loadCitiesSequentially() async {
-    for (int i = 0; i < _cities.length; i++) {
-      if (_hasError) break;
+  Future<void> loadCitiesSequentially() async {
+    for (int i = 0; i < cities.length; i++) {
+      if (hasError) break;
 
-      final city = _cities[i];
+      final city = cities[i];
       setState(() {
-        _currentCity = city;
-        _cityLoadingStatus[city] = 1; // En cours de chargement
+        currentCity = city;
+        cityLoadingStatus[city] = 1;
       });
 
       try {
-        // Simuler un délai de chargement pour cette ville
         await Future.delayed(const Duration(milliseconds: 1800));
 
-        final weather = await _weatherService.getWeatherByCity(city);
+        final weather = await weatherService.getWeatherByCity(city);
 
-        // Ajouter les données météo
         setState(() {
-          _weatherData.add(weather);
-          _cityLoadingStatus[city] = 2; // Chargement terminé
+          weatherData.add(weather);
+          cityLoadingStatus[city] = 2;
         });
 
-        // Afficher la notification de réussite
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.green),
-                  const SizedBox(width: 10),
-                  Text('Données pour $city chargées avec succès'),
-                ],
-              ),
-              duration: const Duration(seconds: 1),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              margin: EdgeInsets.only(
-                bottom: MediaQuery.of(context).size.height - 150,
-                left: 10,
-                right: 10,
-              ),
-            ),
-          );
-        }
-
-        // Attendre explicitement que l'utilisateur voie le statut "chargé" avant de passer à la suivante
-        await Future.delayed(_validationDelay);
+        await Future.delayed(validationDelay);
 
       } catch (e) {
-        _handleError('Erreur lors du chargement de $city: $e');
+        handleError('Erreur lors du chargement de $city: $e');
         return;
       }
     }
 
-    // Une fois toutes les villes chargées, attendre un peu avant de continuer
-    if (_weatherData.isNotEmpty && _weatherData.length == _cities.length) {
+    if (weatherData.isNotEmpty && weatherData.length == cities.length) {
       await Future.delayed(const Duration(milliseconds: 1000));
     }
   }
 
-  void _handleError(String message) {
+  void handleError(String message) {
     setState(() {
-      _hasError = true;
-      _errorMessage = message;
-      _isLoading = false;
+      hasError = true;
+      errorMessage = message;
+      isLoading = false;
     });
   }
 
-  void _retry() {
+  void retry() {
     setState(() {
-      _progress = 0.0;
-      _isLoading = true;
-      _hasError = false;
-      _errorMessage = '';
-      _messageIndex = 0;
-      _currentMessage = _loadingMessages[0];
-      _currentCity = '';
-      _weatherData = [];
+      progress = 0.0;
+      isLoading = true;
+      hasError = false;
+      errorMessage = '';
+      messageIndex = 0;
+      currentMessage =loadingMessages[0];
+      currentCity = '';
+      weatherData = [];
 
-      // Réinitialiser le statut de chargement
-      for (var city in _cities) {
-        _cityLoadingStatus[city] = 0;
+      for (var city in cities) {
+        cityLoadingStatus[city] = 0;
       }
     });
-    _startLoading();
+    startLoading();
   }
 
-  void _navigateToResults() {
+  void navigateToResults() {
     Future.delayed(const Duration(milliseconds: 500), () {
       Navigator.pushReplacement(
         context,
         FadeScaleRoute(
           page: ResultsScreen(
-            weatherData: _weatherData,
+            weatherData: weatherData,
             toggleTheme: widget.toggleTheme,
           ),
         ),
@@ -261,10 +211,10 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     });
   }
 
-  Widget _buildCityLoadingItem(String city) {
-    bool isCurrent = city == _currentCity;
-    bool isLoaded = _cityLoadingStatus[city] == 2;
-    bool isLoading = _cityLoadingStatus[city] == 1;
+  Widget buildCityLoadingItem(String city) {
+    bool isCurrent = city == currentCity;
+    bool isLoaded = cityLoadingStatus[city] == 2;
+    bool isLoading = cityLoadingStatus[city] == 1;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5.0),
@@ -272,7 +222,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.7), // Semi-transparent
+          color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             if (isLoading || isLoaded)
@@ -312,10 +262,10 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                     ? const Icon(Icons.check, color: Colors.white, size: 16)
                     : isLoading
                     ? AnimatedBuilder(
-                  animation: _pulseController,
+                  animation: pulseController,
                   builder: (context, child) {
                     return Transform.scale(
-                      scale: 0.5 + (_pulseController.value * 0.5),
+                      scale: 0.5 + (pulseController.value * 0.5),
                       child: const Icon(
                         Icons.downloading,
                         color: Colors.white,
@@ -365,12 +315,12 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
         ),
       ).animate().fadeIn(
         duration: const Duration(milliseconds: 400),
-        delay: Duration(milliseconds: 100 * _cities.indexOf(city)),
+        delay: Duration(milliseconds: 100 * cities.indexOf(city)),
       ).slideX(
         begin: 0.1,
         end: 0,
         duration: const Duration(milliseconds: 400),
-        delay: Duration(milliseconds: 100 * _cities.indexOf(city)),
+        delay: Duration(milliseconds: 100 * cities.indexOf(city)),
         curve: Curves.easeOutCubic,
       ),
     );
@@ -432,12 +382,9 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
         ),
         child: Stack(
           children: [
-            // Animation de nuages en arrière-plan
             Positioned.fill(
               child: CloudAnimationUtil.buildAnimatedCloudsBackground(context),
             ),
-
-            // Contenu principal avec scroll si nécessaire
             SafeArea(
               child: SingleChildScrollView(
                 child: ConstrainedBox(
@@ -451,9 +398,9 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (_isLoading) ...[
+                        if (isLoading) ...[
                           Text(
-                            _currentMessage,
+                            currentMessage,
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: isDarkMode ? Colors.white : Colors.black87,
@@ -467,7 +414,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
 
                           const SizedBox(height: 30),
 
-                          ProgressBar(progress: _progress),
+                          ProgressBar(progress: progress),
 
                           const SizedBox(height: 30),
 
@@ -502,11 +449,10 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                                 ),
                                 const SizedBox(height: 12),
 
-                                // État de chargement actuel
                                 const SizedBox(height: 8),
-                                if (_currentCity.isNotEmpty)
+                                if (currentCity.isNotEmpty)
                                   Text(
-                                    'Chargement de $_currentCity en cours...',
+                                    'Chargement de $currentCity en cours...',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Theme.of(context).colorScheme.primary,
@@ -515,15 +461,14 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                                   ),
                                 const SizedBox(height: 16),
 
-                                // Liste des villes
-                                ..._cities.map((city) => _buildCityLoadingItem(city)),
+                                ...cities.map((city) => buildCityLoadingItem(city)),
                               ],
                             ),
                           )
                               .animate()
                               .fadeIn(duration: 600.ms, delay: 300.ms)
                               .slideY(begin: 0.2, end: 0, duration: 600.ms, delay: 300.ms),
-                        ] else if (_hasError) ...[
+                        ] else if (hasError) ...[
                           const Icon(
                             Icons.error_outline,
                             size: 80,
@@ -553,7 +498,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                           const SizedBox(height: 10),
 
                           Text(
-                            _errorMessage,
+                            errorMessage,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: isDarkMode ? Colors.white70 : Colors.black87,
@@ -565,7 +510,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                           const SizedBox(height: 30),
 
                           ElevatedButton.icon(
-                            onPressed: _retry,
+                            onPressed: retry,
                             icon: const Icon(Icons.refresh),
                             label: const Text('Réessayer'),
                             style: ElevatedButton.styleFrom(

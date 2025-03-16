@@ -8,7 +8,6 @@ class WeatherDetailCard extends StatelessWidget {
   final String description;
   final double humidity;
   final double windSpeed;
-  // Ajouter le nom de la ville pour la personnalisation par région
   final String cityName;
 
   const WeatherDetailCard({
@@ -18,7 +17,7 @@ class WeatherDetailCard extends StatelessWidget {
     required this.description,
     required this.humidity,
     required this.windSpeed,
-    this.cityName = '',  // Valeur par défaut vide
+    this.cityName = '',
   }) : super(key: key);
 
   @override
@@ -26,15 +25,10 @@ class WeatherDetailCard extends StatelessWidget {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     final primaryColor = Theme.of(context).colorScheme.primary;
-    // Utiliser la couleur personnalisée de la région si disponible
-    final regionColor = cityName.isNotEmpty
-        ? getCustomIconColor(cityName, temperature)
-        : primaryColor;
-
-    // Déterminer des indices de confort basés sur les données
-    final String tempFeel = _getTemperatureFeeling(temperature);
-    final String humidityLevel = _getHumidityLevel(humidity);
-    final String windLevel = _getWindLevel(windSpeed);
+    final regionColor = cityName.isNotEmpty ? getCustomIconColor(cityName, temperature) : primaryColor;
+    final String tempFeel = getTemperatureFeeling(temperature);
+    final String humidityLevel = getHumidityLevel(humidity);
+    final String windLevel = getWindLevel(windSpeed);
 
     return Container(
       width: double.infinity,
@@ -71,7 +65,7 @@ class WeatherDetailCard extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.thermostat_outlined,
-                          color: regionColor, // Utiliser la couleur de région
+                          color: regionColor,
                           size: 24,
                         ),
                         const SizedBox(width: 8),
@@ -96,7 +90,7 @@ class WeatherDetailCard extends StatelessWidget {
                       tempFeel,
                       style: TextStyle(
                         fontSize: 14,
-                        color: _getTemperatureColor(temperature, context, regionColor),
+                        color: getTemperatureColor(temperature, context, regionColor),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -141,7 +135,7 @@ class WeatherDetailCard extends StatelessWidget {
                 Icon(
                   Icons.info_outline,
                   size: 18,
-                  color: regionColor.withOpacity(0.8), // Utiliser la couleur de région
+                  color: regionColor.withOpacity(0.8),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -161,23 +155,23 @@ class WeatherDetailCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildDetailColumn(
+              buildDetailColumn(
                 context,
                 Icons.water_drop,
                 'Humidité',
                 '${humidity.toStringAsFixed(0)}%',
                 humidityLevel,
-                _getHumidityColor(humidity, context, regionColor),
+                getHumidityColor(humidity, context, regionColor),
               ),
-              _buildDetailColumn(
+              buildDetailColumn(
                 context,
                 Icons.air,
                 'Vent',
                 '${windSpeed.toStringAsFixed(1)} m/s',
                 windLevel,
-                _getWindColor(windSpeed, context, regionColor),
+                getWindColor(windSpeed, context, regionColor),
               ),
-              _buildDetailColumn(
+              buildDetailColumn(
                 context,
                 Icons.wb_twilight,
                 'Ressenti',
@@ -192,7 +186,7 @@ class WeatherDetailCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailColumn(
+  Widget buildDetailColumn(
       BuildContext context,
       IconData icon,
       String title,
@@ -245,8 +239,7 @@ class WeatherDetailCard extends StatelessWidget {
     );
   }
 
-  // Helpers pour les indicateurs de confort météo - traductions en français
-  String _getTemperatureFeeling(double temp) {
+  String getTemperatureFeeling(double temp) {
     if (temp < 0) return 'Très froid';
     if (temp < 10) return 'Froid';
     if (temp < 20) return 'Frais';
@@ -255,7 +248,7 @@ class WeatherDetailCard extends StatelessWidget {
     return 'Très chaud';
   }
 
-  String _getHumidityLevel(double humidity) {
+  String getHumidityLevel(double humidity) {
     if (humidity < 30) return 'Très sec';
     if (humidity < 50) return 'Sec';
     if (humidity < 70) return 'Confortable';
@@ -263,7 +256,7 @@ class WeatherDetailCard extends StatelessWidget {
     return 'Très humide';
   }
 
-  String _getWindLevel(double windSpeed) {
+  String getWindLevel(double windSpeed) {
     if (windSpeed < 2) return 'Calme';
     if (windSpeed < 6) return 'Brise légère';
     if (windSpeed < 12) return 'Modéré';
@@ -271,8 +264,7 @@ class WeatherDetailCard extends StatelessWidget {
     return 'Très fort';
   }
 
-  Color _getTemperatureColor(double temp, BuildContext context, Color regionColor) {
-    // Si nous avons une région, tenir compte de sa couleur caractéristique
+  Color getTemperatureColor(double temp, BuildContext context, Color regionColor) {
     if (cityName.isNotEmpty) {
       if (temp < 0) return Color.lerp(Colors.indigo, regionColor, 0.3) ?? Colors.indigo;
       if (temp < 10) return Color.lerp(Colors.blue, regionColor, 0.3) ?? Colors.blue;
@@ -281,7 +273,6 @@ class WeatherDetailCard extends StatelessWidget {
       if (temp < 30) return Color.lerp(Colors.orange, regionColor, 0.3) ?? Colors.orange;
       return Color.lerp(Colors.red, regionColor, 0.2) ?? Colors.red;
     } else {
-      // Comportement par défaut
       if (temp < 0) return Colors.indigo;
       if (temp < 10) return Colors.blue;
       if (temp < 20) return Theme.of(context).colorScheme.primary;
@@ -291,8 +282,7 @@ class WeatherDetailCard extends StatelessWidget {
     }
   }
 
-  Color _getHumidityColor(double humidity, BuildContext context, Color regionColor) {
-    // Incorporer légèrement la couleur de la région
+  Color getHumidityColor(double humidity, BuildContext context, Color regionColor) {
     if (humidity < 30) return Color.lerp(Colors.orange, regionColor, 0.2) ?? Colors.orange;
     if (humidity < 50) return Color.lerp(Colors.green, regionColor, 0.2) ?? Colors.green;
     if (humidity < 70) return regionColor;
@@ -300,8 +290,7 @@ class WeatherDetailCard extends StatelessWidget {
     return Color.lerp(Colors.blue, regionColor, 0.2) ?? Colors.blue;
   }
 
-  Color _getWindColor(double windSpeed, BuildContext context, Color regionColor) {
-    // Incorporer légèrement la couleur de la région
+  Color getWindColor(double windSpeed, BuildContext context, Color regionColor) {
     if (windSpeed < 2) return Color.lerp(Colors.green, regionColor, 0.2) ?? Colors.green;
     if (windSpeed < 6) return regionColor;
     if (windSpeed < 12) return Color.lerp(Colors.orange, regionColor, 0.2) ?? Colors.orange;

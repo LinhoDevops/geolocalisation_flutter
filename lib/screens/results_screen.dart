@@ -84,7 +84,7 @@ class ResultsScreen extends StatelessWidget {
                   return WeatherCard(
                     weather: weather,
                     onTap: () {
-                      _navigateToCityDetails(context, weather);
+                      navigateToCityDetails(context, weather);
                     },
                   )
                       .animate()
@@ -105,7 +105,7 @@ class ResultsScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton.icon(
-                onPressed: () => _restartLoading(context),
+                onPressed: () => restartLoading(context),
                 icon: const Icon(Icons.refresh),
                 label: const Text('Recommencer'),
                 style: ElevatedButton.styleFrom(
@@ -133,14 +133,11 @@ class ResultsScreen extends StatelessWidget {
             ),
           ],
         ),
-        
-      ),
 
-      // Ajout d'un FAB pour une action rapide
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Afficher un dialog avec un résumé ou une comparaison
-          _showWeatherSummaryDialog(context);
+          showWeatherSummaryDialog(context);
         },
         child: const Icon(Icons.insights),
         tooltip: 'Résumé météo',
@@ -156,7 +153,7 @@ class ResultsScreen extends StatelessWidget {
     );
   }
 
-  void _navigateToCityDetails(BuildContext context, WeatherModel weather) {
+  void navigateToCityDetails(BuildContext context, WeatherModel weather) {
     Navigator.push(
       context,
       PageRouteBuilder(
@@ -167,16 +164,10 @@ class ResultsScreen extends StatelessWidget {
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           var curve = Curves.easeInOut;
           var curveTween = CurveTween(curve: curve);
-
           var fadeTween = Tween<double>(begin: 0.0, end: 1.0);
-          var fadeAnimation = fadeTween.animate(
-            animation.drive(curveTween),
-          );
-
+          var fadeAnimation = fadeTween.animate(animation.drive(curveTween),);
           var scaleTween = Tween<double>(begin: 0.9, end: 1.0);
-          var scaleAnimation = scaleTween.animate(
-            animation.drive(curveTween),
-          );
+          var scaleAnimation = scaleTween.animate(animation.drive(curveTween),);
 
           return FadeTransition(
             opacity: fadeAnimation,
@@ -191,7 +182,7 @@ class ResultsScreen extends StatelessWidget {
     );
   }
 
-  void _restartLoading(BuildContext context) {
+  void restartLoading(BuildContext context) {
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
@@ -209,8 +200,7 @@ class ResultsScreen extends StatelessWidget {
     );
   }
 
-  void _showWeatherSummaryDialog(BuildContext context) {
-    // Trouver la ville la plus chaude et la plus froide
+  void showWeatherSummaryDialog(BuildContext context) {
     WeatherModel warmestCity = weatherData.reduce(
           (a, b) => a.temperature > b.temperature ? a : b,
     );
@@ -218,10 +208,7 @@ class ResultsScreen extends StatelessWidget {
     WeatherModel coldestCity = weatherData.reduce(
           (a, b) => a.temperature < b.temperature ? a : b,
     );
-
-    // Calculer la température moyenne
-    double avgTemp = weatherData.map((w) => w.temperature).reduce((a, b) => a + b)
-        / weatherData.length;
+    double avgTemp = weatherData.map((w) => w.temperature).reduce((a, b) => a + b) / weatherData.length;
 
     showDialog(
       context: context,
@@ -237,7 +224,7 @@ class ResultsScreen extends StatelessWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildSummaryItem(
+            buildSummaryItem(
               context,
               Icons.whatshot,
               'Ville la plus chaude:',
@@ -245,7 +232,7 @@ class ResultsScreen extends StatelessWidget {
               Colors.orange,
             ),
             const SizedBox(height: 12),
-            _buildSummaryItem(
+            buildSummaryItem(
               context,
               Icons.ac_unit,
               'Ville la plus froide:',
@@ -253,7 +240,7 @@ class ResultsScreen extends StatelessWidget {
               Colors.blue,
             ),
             const SizedBox(height: 12),
-            _buildSummaryItem(
+            buildSummaryItem(
               context,
               Icons.device_thermostat,
               'Température moyenne:',
@@ -292,7 +279,7 @@ class ResultsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryItem(
+  Widget buildSummaryItem(
       BuildContext context,
       IconData icon,
       String label,

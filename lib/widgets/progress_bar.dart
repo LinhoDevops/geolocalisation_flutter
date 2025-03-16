@@ -32,7 +32,6 @@ class ProgressBar extends StatelessWidget {
             ),
           ),
 
-          // Partie remplie de la barre
           AnimatedContainer(
             duration: const Duration(milliseconds: 500),
             curve: Curves.easeOutCubic,
@@ -57,8 +56,6 @@ class ProgressBar extends StatelessWidget {
               ],
             ),
           ),
-
-          // Petites bulles d'animation sur la barre
           AnimatedPositioned(
             duration: const Duration(milliseconds: 800),
             left: (MediaQuery.of(context).size.width * progress) - 30,
@@ -75,8 +72,6 @@ class ProgressBar extends StatelessWidget {
               ),
             ),
           ),
-
-          // Texte de pourcentage
           Center(
             child: Text(
               '${(progress * 100).toInt()}%',

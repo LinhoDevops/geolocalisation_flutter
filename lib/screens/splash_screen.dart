@@ -14,96 +14,90 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
-  late AnimationController _cloudController;
-  late AnimationController _reflectionController;
-  late AnimationController _fogController;
-  late AnimationController _mountainController;
-  late AnimationController _buttonPulseController;
-  late AnimationController _particleController;
+  late AnimationController cloudController;
+  late AnimationController reflectionController;
+  late AnimationController fogController;
+  late AnimationController mountainController;
+  late AnimationController buttonPulseController;
+  late AnimationController particleController;
 
-  double _textOpacity = 0.0;
-  bool _showEffects = false;
+  double textOpacity = 0.0;
+  bool showEffects = false;
 
-  final List<Particle> _particles = [];
+  final List<Particle> particles = [];
 
   @override
   void initState() {
     super.initState();
 
-    // Controllers pour diverses animations
-    _cloudController = AnimationController(
+    cloudController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 60),
     )..repeat(reverse: false);
 
-    _reflectionController = AnimationController(
+    reflectionController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 4),
     )..repeat(reverse: true);
 
-    _fogController = AnimationController(
+    fogController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 15),
     )..repeat(reverse: true);
 
-    _mountainController = AnimationController(
+    mountainController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 8),
     )..repeat(reverse: true);
 
-    _buttonPulseController = AnimationController(
+    buttonPulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
-    _particleController = AnimationController(
+    particleController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 10),
     )..repeat();
 
-    // Générer des particules aléatoires
-    _generateParticles();
+    generateParticles();
 
-    // Animation séquentielle pour les différents éléments
-    _startSequentialAnimation();
+    startSequentialAnimation();
   }
 
-  void _generateParticles() {
+  void generateParticles() {
     for (int i = 0; i < 80; i++) {
-      _particles.add(Particle.random());
+      particles.add(Particle.random());
     }
   }
 
-  void _startSequentialAnimation() {
-    // Effet de particules avec délai
+  void startSequentialAnimation() {
     Future.delayed(const Duration(milliseconds: 300), () {
       setState(() {
-        _showEffects = true;
+        showEffects = true;
       });
     });
 
-    // Fade in du texte
     Future.delayed(const Duration(milliseconds: 800), () {
       setState(() {
-        _textOpacity = 1.0;
+        textOpacity = 1.0;
       });
     });
   }
 
   @override
   void dispose() {
-    _cloudController.dispose();
-    _reflectionController.dispose();
-    _fogController.dispose();
-    _mountainController.dispose();
-    _buttonPulseController.dispose();
-    _particleController.dispose();
+    cloudController.dispose();
+    reflectionController.dispose();
+    fogController.dispose();
+    mountainController.dispose();
+    buttonPulseController.dispose();
+    particleController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Déterminer si le thème actuel est sombre
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -153,9 +147,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Fond avec gradient dynamique au lieu d'une image
           AnimatedBuilder(
-            animation: _mountainController,
+            animation: mountainController,
             builder: (context, child) {
               return Container(
                 decoration: BoxDecoration(
@@ -175,7 +168,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     ],
                     stops: [
                       0.0,
-                      0.5 + (_mountainController.value * 0.1),
+                      0.5 + (mountainController.value * 0.1),
                       1.0
                     ],
                   ),
@@ -184,11 +177,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             },
           ),
 
-          // Effet de lueur dynamique
-          if (_showEffects)
+          if (showEffects)
             Positioned.fill(
               child: AnimatedBuilder(
-                animation: _mountainController,
+                animation: mountainController,
                 builder: (context, child) {
                   return Container(
                     decoration: BoxDecoration(
@@ -197,8 +189,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         radius: 0.8,
                         colors: [
                           isDarkMode
-                              ? Colors.indigo.withOpacity(0.1 + (_mountainController.value * 0.08))
-                              : Colors.white.withOpacity(0.1 + (_mountainController.value * 0.05)),
+                              ? Colors.indigo.withOpacity(0.1 + (mountainController.value * 0.08))
+                              : Colors.white.withOpacity(0.1 + (mountainController.value * 0.05)),
                           Colors.transparent,
                         ],
                         stops: const [0.0, 1.0],
@@ -209,15 +201,14 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               ),
             ),
 
-          // Particles (gouttes/étoiles) animées pour remplacer les nuages
-          if (_showEffects)
+          if (showEffects)
             AnimatedBuilder(
-              animation: _particleController,
+              animation: particleController,
               builder: (context, child) {
                 return CustomPaint(
                   painter: ParticlePainter(
-                    particles: _particles,
-                    animation: _particleController,
+                    particles: particles,
+                    animation: particleController,
                     isDarkMode: isDarkMode,
                   ),
                   child: Container(),
@@ -225,9 +216,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               },
             ),
 
-          // Brume animée
           AnimatedBuilder(
-            animation: _fogController,
+            animation: fogController,
             builder: (context, child) {
               return Positioned(
                 bottom: 0,
@@ -241,7 +231,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.white.withOpacity(0.1 + (_fogController.value * 0.05)),
+                        Colors.white.withOpacity(0.1 + (fogController.value * 0.05)),
                         Colors.white.withOpacity(0.1),
                         Colors.transparent,
                       ],
@@ -261,7 +251,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         ],
                         stops: [
                           0.0,
-                          0.5 + (math.sin(_fogController.value * math.pi) * 0.5),
+                          0.5 + (math.sin(fogController.value * math.pi) * 0.5),
                           1.0,
                         ],
                       ),
@@ -272,17 +262,16 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             },
           ),
 
-          // Effet de vagues stylisées en bas (similaire à des dunes)
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
             child: AnimatedBuilder(
-              animation: _reflectionController,
+              animation: reflectionController,
               builder: (context, child) {
                 return CustomPaint(
                   painter: WavePainter(
-                    animation: _reflectionController,
+                    animation: reflectionController,
                     isDarkMode: isDarkMode,
                   ),
                   child: Container(height: 120),
@@ -291,16 +280,14 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             ),
           ),
 
-          // Overlay très léger pour assurer la lisibilité
           Container(
             color: isDarkMode
                 ? Colors.black.withOpacity(0.1)
                 : Colors.black.withOpacity(0.05),
           ),
 
-          // Contenu principal
           AnimatedOpacity(
-            opacity: _textOpacity,
+            opacity: textOpacity,
             duration: const Duration(seconds: 1),
             curve: Curves.easeInOut,
             child: Container(
@@ -309,7 +296,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildAnimatedLogo(isDarkMode),
+                  buildAnimatedLogo(isDarkMode),
 
                   const SizedBox(height: 25),
 
@@ -361,12 +348,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
                   const SizedBox(height: 50),
 
-                  _buildButton(
+                  buildButton(
                     text: 'Commencer l\'exploration',
                     icon: Icons.explore,
-                    controller: _buttonPulseController,
+                    controller: buttonPulseController,
                     isDarkMode: isDarkMode,
-                    onPressed: () => _navigateWithAnimation(context),
+                    onPressed: () => navigateWithAnimation(context),
                   )
                       .animate()
                       .fadeIn(delay: const Duration(milliseconds: 800), duration: const Duration(milliseconds: 600))
@@ -382,8 +369,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     );
   }
 
-  // Logo animé avec effets météo
-  Widget _buildAnimatedLogo(bool isDarkMode) {
+  Widget buildAnimatedLogo(bool isDarkMode) {
     return Container(
       width: 120,
       height: 120,
@@ -408,20 +394,19 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Cercle lumineux derrière
           AnimatedBuilder(
-            animation: _buttonPulseController,
+            animation: buttonPulseController,
             builder: (context, child) {
               return Container(
-                width: 80 + (_buttonPulseController.value * 15),
-                height: 80 + (_buttonPulseController.value * 15),
+                width: 80 + (buttonPulseController.value * 15),
+                height: 80 + (buttonPulseController.value * 15),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
                       isDarkMode
-                          ? Colors.blueAccent.withOpacity(0.7 - (_buttonPulseController.value * 0.3))
-                          : Colors.white.withOpacity(0.8 - (_buttonPulseController.value * 0.3)),
+                          ? Colors.blueAccent.withOpacity(0.7 - (buttonPulseController.value * 0.3))
+                          : Colors.white.withOpacity(0.8 - (buttonPulseController.value * 0.3)),
                       Colors.transparent,
                     ],
                     stops: const [0.2, 1.0],
@@ -431,7 +416,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             },
           ),
 
-          // Symboles météo
           Icon(
             Icons.wb_sunny,
             size: 36,
@@ -499,8 +483,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     );
   }
 
-  // Bouton adapté au thème avec animations
-  Widget _buildButton({
+  Widget buildButton({
     required String text,
     required IconData icon,
     required VoidCallback onPressed,
@@ -588,8 +571,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     );
   }
 
-  // Animation de transition vers l'écran suivant
-  void _navigateWithAnimation(BuildContext context) {
+  void navigateWithAnimation(BuildContext context) {
     Navigator.push(
       context,
       PageRouteBuilder(
@@ -598,14 +580,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           var curve = Curves.easeInOutCubic;
           var curveTween = CurveTween(curve: curve);
-
-          // Animation de fondu
           var fadeTween = Tween<double>(begin: 0.0, end: 1.0);
           var fadeAnimation = fadeTween.animate(
             animation.drive(curveTween),
           );
-
-          // Animation de zoom
           var scaleTween = Tween<double>(begin: 1.1, end: 1.0);
           var scaleAnimation = scaleTween.animate(
             animation.drive(curveTween),
@@ -625,7 +603,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   }
 }
 
-// Classe pour les particules (gouttes/étoiles) animées
 class Particle {
   double x;
   double y;
@@ -652,7 +629,6 @@ class Particle {
   }
 }
 
-// Painter pour dessiner les particules
 class ParticlePainter extends CustomPainter {
   final List<Particle> particles;
   final Animation<double> animation;
@@ -667,7 +643,6 @@ class ParticlePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     for (var particle in particles) {
-      // Calculer la position actuelle de la particule
       double yPos = (particle.y + (animation.value * particle.speed)) % 1.0;
 
       final paint = Paint()
@@ -687,7 +662,6 @@ class ParticlePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-// Painter pour les vagues stylisées
 class WavePainter extends CustomPainter {
   final Animation<double> animation;
   final bool isDarkMode;
@@ -706,11 +680,7 @@ class WavePainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final path = Path();
-
-    // Point de départ en bas à gauche
     path.moveTo(0, size.height);
-
-    // Première vague
     double amplitude = size.height * 0.1;
     double wavePhase = animation.value * math.pi * 2;
 
@@ -722,13 +692,11 @@ class WavePainter extends CustomPainter {
       path.lineTo(dx, dy);
     }
 
-    // Fermer le chemin
     path.lineTo(size.width, size.height);
     path.close();
 
     canvas.drawPath(path, paint);
 
-    // Deuxième vague plus basse
     final paint2 = Paint()
       ..color = isDarkMode
           ? Color(0xFF0D253F).withOpacity(0.6)

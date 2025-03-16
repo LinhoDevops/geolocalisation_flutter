@@ -21,36 +21,36 @@ class WeatherApp extends StatefulWidget {
 }
 
 class _WeatherAppState extends State<WeatherApp> with SingleTickerProviderStateMixin {
-  bool _isDarkMode = false;
-  late AnimationController _themeAnimationController;
-  late Animation<double> _themeAnimation;
+  bool isDarkMode = false;
+  late AnimationController themeAnimationController;
+  late Animation<double> themeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _themeAnimationController = AnimationController(
+    themeAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    _themeAnimation = CurvedAnimation(
-      parent: _themeAnimationController,
+    themeAnimation = CurvedAnimation(
+      parent: themeAnimationController,
       curve: Curves.easeInOut,
     );
   }
 
   @override
   void dispose() {
-    _themeAnimationController.dispose();
+    themeAnimationController.dispose();
     super.dispose();
   }
 
   void _toggleTheme() {
     setState(() {
-      _isDarkMode = !_isDarkMode;
-      if (_isDarkMode) {
-        _themeAnimationController.forward();
+      isDarkMode = !isDarkMode;
+      if (isDarkMode) {
+        themeAnimationController.forward();
       } else {
-        _themeAnimationController.reverse();
+        themeAnimationController.reverse();
       }
     });
   }
@@ -58,13 +58,13 @@ class _WeatherAppState extends State<WeatherApp> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _themeAnimation,
+      animation: themeAnimation,
       builder: (context, child) {
         return MaterialApp(
           title: 'Weather Explorer',
           theme: ThemeManager.lightTheme,
           darkTheme: ThemeManager.darkTheme,
-          themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
           debugShowCheckedModeBanner: false,
           home: SplashScreen(toggleTheme: _toggleTheme),
         );

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 
 class ThemeManager {
-  // Couleurs personnalisées pour thème clair
   static const Color primaryLight = Color(0xFF1976D2);
   static const Color secondaryLight = Color(0xFF42A5F5);
   static const Color accentLight = Color(0xFF00B0FF);
 
-  // Couleurs personnalisées pour thème sombre
   static const Color primaryDark = Color(0xFF0D47A1);
   static const Color secondaryDark = Color(0xFF1565C0);
   static const Color accentDark = Color(0xFF2979FF);

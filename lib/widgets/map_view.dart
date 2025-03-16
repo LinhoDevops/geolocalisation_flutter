@@ -19,15 +19,15 @@ class MapView extends StatefulWidget {
 }
 
 class _MapViewState extends State<MapView> {
-  GoogleMapController? _mapController;
-  bool _isMapLoaded = false;
-  Set<Marker> _markers = {};
-  final _defaultZoom = 12.0;
+  GoogleMapController? mapController;
+  bool isMapLoaded = false;
+  Set<Marker> markers = {};
+  final defaultZoom = 12.0;
 
   @override
   void initState() {
     super.initState();
-    _markers = {
+    markers = {
       Marker(
         markerId: MarkerId(widget.cityName),
         position: LatLng(widget.latitude, widget.longitude),
@@ -39,17 +39,17 @@ class _MapViewState extends State<MapView> {
     };
   }
 
-  void _onMapCreated(GoogleMapController controller) {
-    _mapController = controller;
+  void onMapCreated(GoogleMapController controller) {
+    mapController = controller;
     setState(() {
-      _isMapLoaded = true;
+      isMapLoaded = true;
     });
 
     Future.delayed(const Duration(milliseconds: 500), () {
-      _mapController?.animateCamera(
+      mapController?.animateCamera(
         CameraUpdate.newLatLngZoom(
           LatLng(widget.latitude, widget.longitude),
-          _defaultZoom,
+          defaultZoom,
         ),
       );
     });
@@ -62,12 +62,12 @@ class _MapViewState extends State<MapView> {
     return Stack(
       children: [
         GoogleMap(
-          onMapCreated: _onMapCreated,
+          onMapCreated: onMapCreated,
           initialCameraPosition: CameraPosition(
             target: LatLng(widget.latitude, widget.longitude),
-            zoom: _defaultZoom,
+            zoom: defaultZoom,
           ),
-          markers: _markers,
+          markers: markers,
           mapType: MapType.normal,
           zoomControlsEnabled: false,
           myLocationButtonEnabled: false,
@@ -77,7 +77,7 @@ class _MapViewState extends State<MapView> {
         ),
 
         // Loading indicator
-        if (!_isMapLoaded)
+        if (!isMapLoaded)
           Container(
             color: Theme.of(context).colorScheme.background.withOpacity(0.7),
             child: Center(
@@ -93,34 +93,34 @@ class _MapViewState extends State<MapView> {
           right: 16,
           child: Column(
             children: [
-              _buildMapButton(
+              buildMapButton(
                 context: context,
                 icon: Icons.add,
                 onPressed: () {
-                  _mapController?.animateCamera(
+                  mapController?.animateCamera(
                     CameraUpdate.zoomIn(),
                   );
                 },
               ),
               const SizedBox(height: 8),
-              _buildMapButton(
+              buildMapButton(
                 context: context,
                 icon: Icons.remove,
                 onPressed: () {
-                  _mapController?.animateCamera(
+                  mapController?.animateCamera(
                     CameraUpdate.zoomOut(),
                   );
                 },
               ),
               const SizedBox(height: 8),
-              _buildMapButton(
+              buildMapButton(
                 context: context,
                 icon: Icons.center_focus_strong,
                 onPressed: () {
-                  _mapController?.animateCamera(
+                  mapController?.animateCamera(
                     CameraUpdate.newLatLngZoom(
                       LatLng(widget.latitude, widget.longitude),
-                      _defaultZoom,
+                      defaultZoom,
                     ),
                   );
                 },
@@ -179,7 +179,7 @@ class _MapViewState extends State<MapView> {
     );
   }
 
-  Widget _buildMapButton({
+  Widget buildMapButton({
     required BuildContext context,
     required IconData icon,
     required VoidCallback onPressed,

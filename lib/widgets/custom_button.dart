@@ -17,25 +17,25 @@ class CustomButton extends StatefulWidget {
 }
 
 class _CustomButtonState extends State<CustomButton> with SingleTickerProviderStateMixin {
-  bool _isHovered = false;
-  bool _isPressed = false;
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
+  bool isHovered = false;
+  bool isPressed = false;
+  late AnimationController controller;
+  late Animation<double> scaleAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 150),
     );
 
-    _scaleAnimation = Tween<double>(
+    scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 0.95,
     ).animate(
       CurvedAnimation(
-        parent: _controller,
+        parent: controller,
         curve: Curves.easeInOut,
       ),
     );
@@ -43,7 +43,7 @@ class _CustomButtonState extends State<CustomButton> with SingleTickerProviderSt
 
   @override
   void dispose() {
-    _controller.dispose();
+    controller.dispose();
     super.dispose();
   }
 
@@ -56,42 +56,42 @@ class _CustomButtonState extends State<CustomButton> with SingleTickerProviderSt
     return MouseRegion(
       onEnter: (_) {
         setState(() {
-          _isHovered = true;
+          isHovered = true;
         });
       },
       onExit: (_) {
         setState(() {
-          _isHovered = false;
-          if (_isPressed) {
-            _isPressed = false;
-            _controller.reverse();
+          isHovered = false;
+          if (isPressed) {
+            isPressed = false;
+            controller.reverse();
           }
         });
       },
       child: GestureDetector(
         onTapDown: (_) {
           setState(() {
-            _isPressed = true;
-            _controller.forward();
+            isPressed = true;
+            controller.forward();
           });
         },
         onTapUp: (_) {
           setState(() {
-            _isPressed = false;
-            _controller.reverse();
+            isPressed = false;
+            controller.reverse();
           });
         },
         onTapCancel: () {
           setState(() {
-            _isPressed = false;
-            _controller.reverse();
+            isPressed = false;
+            controller.reverse();
           });
         },
         child: AnimatedBuilder(
-          animation: _controller,
+          animation: controller,
           builder: (context, child) {
             return Transform.scale(
-              scale: _scaleAnimation.value,
+              scale: scaleAnimation.value,
               child: child,
             );
           },
@@ -115,8 +115,8 @@ class _CustomButtonState extends State<CustomButton> with SingleTickerProviderSt
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: primaryColor.withOpacity(_isHovered ? 0.4 : 0.2),
-                    blurRadius: _isHovered ? 12 : 8,
+                    color: primaryColor.withOpacity(isHovered ? 0.4 : 0.2),
+                    blurRadius: isHovered ? 12 : 8,
                     offset: const Offset(0, 4),
                   ),
                 ],

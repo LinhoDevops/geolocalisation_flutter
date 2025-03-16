@@ -13,18 +13,17 @@ class ParticleOverlay extends StatefulWidget {
 }
 
 class _ParticleOverlayState extends State<ParticleOverlay> with TickerProviderStateMixin {
-  late AnimationController _controller;
+  late AnimationController controller;
   List<Particle> particles = [];
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 10),
     )..repeat();
 
-    // Créer des particules aléatoires
     for (int i = 0; i < 50; i++) {
       particles.add(Particle.random());
     }
@@ -32,19 +31,19 @@ class _ParticleOverlayState extends State<ParticleOverlay> with TickerProviderSt
 
   @override
   void dispose() {
-    _controller.dispose();
+    controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _controller,
+      animation: controller,
       builder: (context, child) {
         return CustomPaint(
           painter: ParticlePainter(
             particles: particles,
-            animation: _controller,
+            animation: controller,
             isDarkMode: widget.isDarkMode,
           ),
           child: Container(),
