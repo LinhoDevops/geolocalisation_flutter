@@ -25,10 +25,17 @@ class WeatherService {
   Future<List<WeatherModel>> getWeatherForCities(List<String> cities) async {
     List<WeatherModel> weatherList = [];
 
+    // Simuler un délai pour respecter la contrainte pédagogique
     for (String city in cities) {
       try {
+        // Ajouter un délai artificiel pour simuler un chargement plus long
+        await Future.delayed(const Duration(milliseconds: 1200));
+
         WeatherModel weather = await getWeatherByCity(city);
         weatherList.add(weather);
+
+        // Petit délai après chaque chargement pour montrer clairement la progression
+        await Future.delayed(const Duration(milliseconds: 300));
       } catch (e) {
         print('Erreur pour $city: $e');
         // Continuer même si une ville échoue

@@ -16,15 +16,51 @@ class LoadingScreen extends StatefulWidget {
   State<LoadingScreen> createState() => _LoadingScreenState();
 }
 
+// Route de transition personnalisée
+class FadeScaleRoute extends PageRouteBuilder {
+  final Widget page;
+
+  FadeScaleRoute({required this.page})
+      : super(
+    pageBuilder: (context, animation, secondaryAnimation) => page,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      var curve = Curves.easeOutCubic;
+      var curveTween = CurveTween(curve: curve);
+
+      var fadeTween = Tween<double>(begin: 0.0, end: 1.0);
+      var fadeAnimation = fadeTween.animate(
+        animation.drive(curveTween),
+      );
+
+      var scaleTween = Tween<double>(begin: 0.92, end: 1.0);
+      var scaleAnimation = scaleTween.animate(
+        animation.drive(curveTween),
+      );
+
+      return FadeTransition(
+        opacity: fadeAnimation,
+        child: ScaleTransition(
+          scale: scaleAnimation,
+          child: child,
+        ),
+      );
+    },
+    transitionDuration: const Duration(milliseconds: 700),
+  );
+}
+
 class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProviderStateMixin {
   final WeatherService _weatherService = WeatherService();
-  final List<String> _cities = ['Paris', 'New York', 'Tokyo', 'London', 'Sydney'];
+
+  // Liste modifiée pour utiliser les régions du Sénégal
+  final List<String> _cities = ['Dakar', 'Saint-Louis', 'Thies', 'Diourbel', 'Ziguinchor'];
+
   final List<String> _loadingMessages = [
     'Nous téléchargeons les données...',
     'C\'est presque fini...',
     'Plus que quelques secondes avant d\'avoir le résultat...',
-    'Analyse des conditions météorologiques...',
-    'Préparation de votre expérience météo...',
+    // 'Analyse des conditions météorologiques...',
+    // 'Préparation de votre expérience météo...',
   ];
 
   List<WeatherModel> _weatherData = [];
@@ -38,6 +74,12 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
   late AnimationController _pulseController;
   bool _isDarkMode = false;
 
+  // Pour suivre l'état de chargement de chaque ville
+  Map<String, int> _cityLoadingStatus = {}; // 0: pas commencé, 1: en cours, 2: terminé
+
+  // Délai de validation pour les villes
+  final Duration _validationDelay = const Duration(milliseconds: 1500);
+
   @override
   void initState() {
     super.initState();
@@ -46,6 +88,12 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
+
+    // Initialiser le statut de chargement de toutes les villes
+    for (var city in _cities) {
+      _cityLoadingStatus[city] = 0;
+    }
+
     _startLoading();
   }
 
@@ -70,11 +118,22 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
         }
       } else {
         double increment;
-        // Acceleration douce, puis ralentissement vers la fin
-        if (_progress < 0.7) {
+        // Calculer le progrès en fonction du nombre de villes chargées
+        int citiesLoaded = _weatherData.length;
+        double targetProgress = citiesLoaded / _cities.length;
+
+        // Accélération douce, puis ralentissement vers la fin
+        if (_progress < targetProgress) {
           increment = 0.005 + (tickCount * 0.0001);
+          // Limiter la progression pour qu'elle ne dépasse pas la cible
+          if (_progress + increment > targetProgress && citiesLoaded < _cities.length) {
+            increment = (targetProgress - _progress) / 10; // progression graduelle vers la cible
+          }
+        } else if (_progress < 1.0 && citiesLoaded == _cities.length) {
+          // Terminer rapidement une fois toutes les villes chargées
+          increment = 0.01;
         } else {
-          increment = 0.005 - ((_progress - 0.7) * 0.015);
+          increment = 0; // Attendre le chargement de plus de villes
         }
 
         setState(() {
@@ -100,27 +159,38 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
   }
 
   Future<void> _loadCitiesSequentially() async {
-    List<WeatherModel> weatherData = [];
-
     for (int i = 0; i < _cities.length; i++) {
       if (_hasError) break;
 
+      final city = _cities[i];
       setState(() {
-        _currentCity = _cities[i];
+        _currentCity = city;
+        _cityLoadingStatus[city] = 1; // En cours de chargement
       });
 
       try {
-        // Simuler un délai de chargement pour chaque ville
-        await Future.delayed(const Duration(milliseconds: 800));
+        // Simuler un délai de chargement pour cette ville
+        await Future.delayed(const Duration(milliseconds: 1800));
 
-        final weather = await _weatherService.getWeatherByCity(_cities[i]);
-        weatherData.add(weather);
+        final weather = await _weatherService.getWeatherByCity(city);
 
-        // Montrer un feedback pour chaque ville chargée
+        // Ajouter les données météo
+        setState(() {
+          _weatherData.add(weather);
+          _cityLoadingStatus[city] = 2; // Chargement terminé
+        });
+
+        // Afficher la notification de réussite
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Données pour ${_cities[i]} chargées avec succès'),
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.green),
+                  const SizedBox(width: 10),
+                  Text('Données pour $city chargées avec succès'),
+                ],
+              ),
               duration: const Duration(seconds: 1),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
@@ -134,18 +204,19 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
             ),
           );
         }
+
+        // Attendre explicitement que l'utilisateur voie le statut "chargé" avant de passer à la suivante
+        await Future.delayed(_validationDelay);
+
       } catch (e) {
-        _handleError('Erreur lors du chargement de ${_cities[i]}: $e');
+        _handleError('Erreur lors du chargement de $city: $e');
         return;
       }
     }
 
-    if (weatherData.isNotEmpty) {
-      setState(() {
-        _weatherData = weatherData;
-        _hasError = false;
-        _errorMessage = '';
-      });
+    // Une fois toutes les villes chargées, attendre un peu avant de continuer
+    if (_weatherData.isNotEmpty && _weatherData.length == _cities.length) {
+      await Future.delayed(const Duration(milliseconds: 1000));
     }
   }
 
@@ -166,6 +237,12 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
       _messageIndex = 0;
       _currentMessage = _loadingMessages[0];
       _currentCity = '';
+      _weatherData = [];
+
+      // Réinitialiser le statut de chargement
+      for (var city in _cities) {
+        _cityLoadingStatus[city] = 0;
+      }
     });
     _startLoading();
   }
@@ -174,98 +251,158 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     Future.delayed(const Duration(milliseconds: 500), () {
       Navigator.pushReplacement(
         context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => ResultsScreen(
+        FadeScaleRoute(
+          page: ResultsScreen(
             weatherData: _weatherData,
             toggleTheme: widget.toggleTheme,
           ),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            const begin = Offset(1.0, 0.0);
-            const end = Offset.zero;
-            const curve = Curves.easeInOutCubic;
-
-            var tween = Tween(begin: begin, end: end).chain(
-              CurveTween(curve: curve),
-            );
-
-            return SlideTransition(
-              position: animation.drive(tween),
-              child: FadeTransition(
-                opacity: animation,
-                child: child,
-              ),
-            );
-          },
-          transitionDuration: const Duration(milliseconds: 800),
         ),
       );
     });
   }
 
-  Widget _buildCityLoadingItem(String city, bool isLoading) {
+  Widget _buildCityLoadingItem(String city) {
     bool isCurrent = city == _currentCity;
+    bool isLoaded = _cityLoadingStatus[city] == 2;
+    bool isLoading = _cityLoadingStatus[city] == 1;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: isCurrent
-                  ? Theme.of(context).colorScheme.primary
-                  : isLoading
-                  ? Colors.grey.withOpacity(0.3)
-                  : Colors.green,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: isCurrent
-                  ? AnimatedBuilder(
-                animation: _pulseController,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: 0.5 + (_pulseController.value * 0.5),
-                    child: const Icon(
-                      Icons.downloading,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  );
-                },
-              )
-                  : isLoading
-                  ? const SizedBox.shrink()
-                  : const Icon(
-                Icons.check,
-                color: Colors.white,
-                size: 16,
+      padding: const EdgeInsets.symmetric(vertical: 5.0),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface.withOpacity(0.7), // Semi-transparent
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            if (isLoading || isLoaded)
+              BoxShadow(
+                color: isLoaded
+                    ? Colors.green.withOpacity(0.3)
+                    : Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                blurRadius: 8,
+                spreadRadius: 1,
+              ),
+          ],
+          border: Border.all(
+            color: isLoaded
+                ? Colors.green
+                : isLoading
+                ? Theme.of(context).colorScheme.primary
+                : Colors.transparent,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: isLoaded
+                    ? Colors.green
+                    : isLoading
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.grey.withOpacity(0.3),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: isLoaded
+                    ? const Icon(Icons.check, color: Colors.white, size: 16)
+                    : isLoading
+                    ? AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: 0.5 + (_pulseController.value * 0.5),
+                      child: const Icon(
+                        Icons.downloading,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    );
+                  },
+                )
+                    : const SizedBox.shrink(),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            city,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-              color: isCurrent
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                city,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: isLoading || isLoaded ? FontWeight.bold : FontWeight.normal,
+                  color: isLoaded
+                      ? Colors.green
+                      : isLoading
+                      ? Theme.of(context).colorScheme.primary
+                      : null,
+                ),
+              ),
             ),
-          ),
-        ],
+            if (isLoaded)
+              const Icon(
+                Icons.verified,
+                color: Colors.green,
+                size: 18,
+              ).animate().scale(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.elasticOut,
+              ),
+            if (isLoading && !isLoaded)
+              const CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+              ).animate()
+                  .fadeIn(duration: 300.ms)
+                  .shimmer(
+                duration: 1200.ms,
+                color: Colors.white24,
+              ),
+          ],
+        ),
+      ).animate().fadeIn(
+        duration: const Duration(milliseconds: 400),
+        delay: Duration(milliseconds: 100 * _cities.indexOf(city)),
+      ).slideX(
+        begin: 0.1,
+        end: 0,
+        duration: const Duration(milliseconds: 400),
+        delay: Duration(milliseconds: 100 * _cities.indexOf(city)),
+        curve: Curves.easeOutCubic,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('Chargement en cours'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDarkMode
+                  ? [
+                Color(0xFF1A237E).withOpacity(0.8),
+                Color(0xFF0D47A1).withOpacity(0.8),
+              ]
+                  : [
+                Color(0xFF42A5F5).withOpacity(0.8),
+                Color(0xFF1976D2).withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
         actions: [
           IconButton(
             icon: Icon(
@@ -282,9 +419,14 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            colors: isDarkMode
+                ? [
+              Color(0xFF0D253F),
+              Color(0xFF142E4C),
+            ]
+                : [
+              Color(0xFFE3F2FD),
+              Color(0xFFBBDEFB),
             ],
           ),
         ),
@@ -295,116 +437,155 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
               child: CloudAnimationUtil.buildAnimatedCloudsBackground(context),
             ),
 
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (_isLoading) ...[
-                    Text(
-                      _currentMessage,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    )
-                        .animate(onPlay: (controller) => controller.repeat())
-                        .fadeIn(duration: 600.ms)
-                        .then(delay: 2400.ms)
-                        .fadeOut(duration: 600.ms),
-
-                    const SizedBox(height: 40),
-
-                    ProgressBar(progress: _progress),
-
-                    const SizedBox(height: 40),
-
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
+            // Contenu principal avec scroll si nécessaire
+            SafeArea(
+              child: SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.of(context).size.height -
+                        MediaQuery.of(context).padding.top -
+                        MediaQuery.of(context).padding.bottom,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (_isLoading) ...[
                           Text(
-                            'Chargement des données météo',
-                            style: Theme.of(context).textTheme.titleMedium,
+                            _currentMessage,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode ? Colors.white : Colors.black87,
+                            ),
                             textAlign: TextAlign.center,
+                          )
+                              .animate(onPlay: (controller) => controller.repeat())
+                              .fadeIn(duration: 600.ms)
+                              .then(delay: 2400.ms)
+                              .fadeOut(duration: 600.ms),
+
+                          const SizedBox(height: 30),
+
+                          ProgressBar(progress: _progress),
+
+                          const SizedBox(height: 30),
+
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                              border: Border.all(
+                                color: isDarkMode
+                                    ? Colors.white.withOpacity(0.1)
+                                    : Colors.black.withOpacity(0.05),
+                                width: 1,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Chargement des données météo',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: isDarkMode ? Colors.white : Colors.black87,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 12),
+
+                                // État de chargement actuel
+                                const SizedBox(height: 8),
+                                if (_currentCity.isNotEmpty)
+                                  Text(
+                                    'Chargement de $_currentCity en cours...',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                const SizedBox(height: 16),
+
+                                // Liste des villes
+                                ..._cities.map((city) => _buildCityLoadingItem(city)),
+                              ],
+                            ),
+                          )
+                              .animate()
+                              .fadeIn(duration: 600.ms, delay: 300.ms)
+                              .slideY(begin: 0.2, end: 0, duration: 600.ms, delay: 300.ms),
+                        ] else if (_hasError) ...[
+                          const Icon(
+                            Icons.error_outline,
+                            size: 80,
+                            color: Colors.red,
+                          )
+                              .animate()
+                              .scale(
+                            begin: const Offset(0.5, 0.5),
+                            end: const Offset(1, 1),
+                            duration: 400.ms,
+                            curve: Curves.elasticOut,
                           ),
-                          const SizedBox(height: 16),
-                          ..._cities.map((city) => _buildCityLoadingItem(
-                            city,
-                            !_weatherData.any((w) => w.cityName == city) && city != _currentCity,
-                          )),
+
+                          const SizedBox(height: 20),
+
+                          Text(
+                            'Une erreur est survenue',
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              color: isDarkMode ? Colors.white : Colors.black87,
+                            ),
+                            textAlign: TextAlign.center,
+                          )
+                              .animate()
+                              .fadeIn(duration: 400.ms, delay: 200.ms)
+                              .slideY(begin: 0.2, end: 0, duration: 400.ms, delay: 200.ms),
+
+                          const SizedBox(height: 10),
+
+                          Text(
+                            _errorMessage,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: isDarkMode ? Colors.white70 : Colors.black87,
+                            ),
+                          )
+                              .animate()
+                              .fadeIn(duration: 400.ms, delay: 400.ms),
+
+                          const SizedBox(height: 30),
+
+                          ElevatedButton.icon(
+                            onPressed: _retry,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Réessayer'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          )
+                              .animate()
+                              .fadeIn(duration: 400.ms, delay: 600.ms)
+                              .scale(
+                            begin: const Offset(0.9, 0.9),
+                            end: const Offset(1, 1),
+                            duration: 400.ms,
+                            delay: 600.ms,
+                          ),
                         ],
-                      ),
-                    )
-                        .animate()
-                        .fadeIn(duration: 600.ms, delay: 300.ms)
-                        .slideY(begin: 0.2, end: 0, duration: 600.ms, delay: 300.ms),
-                  ] else if (_hasError) ...[
-                    const Icon(
-                      Icons.error_outline,
-                      size: 80,
-                      color: Colors.red,
-                    )
-                        .animate()
-                        .scale(
-                      begin: const Offset(0.5, 0.5),
-                      end: const Offset(1, 1),
-                      duration: 400.ms,
-                      curve: Curves.elasticOut,
+                      ],
                     ),
-
-                    const SizedBox(height: 20),
-
-                    Text(
-                      'Une erreur est survenue',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                      textAlign: TextAlign.center,
-                    )
-                        .animate()
-                        .fadeIn(duration: 400.ms, delay: 200.ms)
-                        .slideY(begin: 0.2, end: 0, duration: 400.ms, delay: 200.ms),
-
-                    const SizedBox(height: 10),
-
-                    Text(
-                      _errorMessage,
-                      textAlign: TextAlign.center,
-                    )
-                        .animate()
-                        .fadeIn(duration: 400.ms, delay: 400.ms),
-
-                    const SizedBox(height: 30),
-
-                    ElevatedButton.icon(
-                      onPressed: _retry,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Réessayer'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    )
-                        .animate()
-                        .fadeIn(duration: 400.ms, delay: 600.ms)
-                        .scale(
-                      begin: const Offset(0.9, 0.9),
-                      end: const Offset(1, 1),
-                      duration: 400.ms,
-                      delay: 600.ms,
-                    ),
-                  ],
-                ],
+                  ),
+                ),
               ),
             ),
           ],

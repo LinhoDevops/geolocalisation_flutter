@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:weather_app/screens/loading_screen.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:math' as math;
+import 'dart:async';
 
 class SplashScreen extends StatefulWidget {
   final Function toggleTheme;
@@ -18,9 +19,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   late AnimationController _fogController;
   late AnimationController _mountainController;
   late AnimationController _buttonPulseController;
+  late AnimationController _particleController;
 
   double _textOpacity = 0.0;
-  bool _showMountainGlow = false;
+  bool _showEffects = false;
+
+  final List<Particle> _particles = [];
 
   @override
   void initState() {
@@ -52,22 +56,36 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
+    _particleController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    )..repeat();
+
+    // Générer des particules aléatoires
+    _generateParticles();
+
     // Animation séquentielle pour les différents éléments
     _startSequentialAnimation();
   }
 
+  void _generateParticles() {
+    for (int i = 0; i < 80; i++) {
+      _particles.add(Particle.random());
+    }
+  }
+
   void _startSequentialAnimation() {
+    // Effet de particules avec délai
+    Future.delayed(const Duration(milliseconds: 300), () {
+      setState(() {
+        _showEffects = true;
+      });
+    });
+
     // Fade in du texte
     Future.delayed(const Duration(milliseconds: 800), () {
       setState(() {
         _textOpacity = 1.0;
-      });
-    });
-
-    // Effet de lueur sur les montagnes
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      setState(() {
-        _showMountainGlow = true;
       });
     });
   }
@@ -79,6 +97,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     _fogController.dispose();
     _mountainController.dispose();
     _buttonPulseController.dispose();
+    _particleController.dispose();
     super.dispose();
   }
 
@@ -134,35 +153,39 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Image de fond avec animation subtile
+          // Fond avec gradient dynamique au lieu d'une image
           AnimatedBuilder(
             animation: _mountainController,
             builder: (context, child) {
-              return Transform.scale(
-                scale: 1.0 + (_mountainController.value * 0.03), // Légère animation de zoom
-                child: ColorFiltered(
-                  // Assombrir davantage l'image de nuit si nécessaire
-                  colorFilter: isDarkMode
-                      ? const ColorFilter.mode(
-                      Colors.black38,
-                      BlendMode.darken
-                  )
-                      : const ColorFilter.mode(
-                      Colors.transparent,
-                      BlendMode.srcOver
-                  ),
-                  child: Image.asset(
-                    isDarkMode ? 'assets/images/night.png' : 'assets/images/day.png',
-                    fit: BoxFit.cover,
-                    filterQuality: FilterQuality.high,
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDarkMode
+                        ? [
+                      Color(0xFF0D253F),
+                      Color(0xFF142E4C),
+                      Color(0xFF1D3A5C),
+                    ]
+                        : [
+                      Color(0xFF48AAE4),
+                      Color(0xFF4298D8),
+                      Color(0xFF2E77C3),
+                    ],
+                    stops: [
+                      0.0,
+                      0.5 + (_mountainController.value * 0.1),
+                      1.0
+                    ],
                   ),
                 ),
               );
             },
           ),
 
-          // Effet de lueur sur les montagnes (activé avec délai)
-          if (_showMountainGlow)
+          // Effet de lueur dynamique
+          if (_showEffects)
             Positioned.fill(
               child: AnimatedBuilder(
                 animation: _mountainController,
@@ -174,8 +197,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         radius: 0.8,
                         colors: [
                           isDarkMode
-                              ? Colors.indigo.withOpacity(0.05 + (_mountainController.value * 0.08))
-                              : Colors.orangeAccent.withOpacity(0.05 + (_mountainController.value * 0.05)),
+                              ? Colors.indigo.withOpacity(0.1 + (_mountainController.value * 0.08))
+                              : Colors.white.withOpacity(0.1 + (_mountainController.value * 0.05)),
                           Colors.transparent,
                         ],
                         stops: const [0.0, 1.0],
@@ -184,6 +207,22 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   );
                 },
               ),
+            ),
+
+          // Particles (gouttes/étoiles) animées pour remplacer les nuages
+          if (_showEffects)
+            AnimatedBuilder(
+              animation: _particleController,
+              builder: (context, child) {
+                return CustomPaint(
+                  painter: ParticlePainter(
+                    particles: _particles,
+                    animation: _particleController,
+                    isDarkMode: isDarkMode,
+                  ),
+                  child: Container(),
+                );
+              },
             ),
 
           // Brume animée
@@ -233,101 +272,33 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             },
           ),
 
-          // Nuages animés
-          Positioned(
-            top: 70,
-            left: -100 + (_cloudController.value * (MediaQuery.of(context).size.width + 200)),
-            child: Opacity(
-              opacity: 0.8,
-              child: Icon(
-                Icons.cloud,
-                size: 80,
-                color: isDarkMode ? Colors.white.withOpacity(0.7) : Colors.black54,
-              ),
-            ),
-          ),
-
-          Positioned(
-            top: 120,
-            right: -80 + (_cloudController.value * 0.7 * (MediaQuery.of(context).size.width + 160)),
-            child: Opacity(
-              opacity: 0.7,
-              child: Icon(
-                Icons.cloud,
-                size: 100,
-                color: isDarkMode ? Colors.white.withOpacity(0.6) : Colors.black45,
-              ),
-            ),
-          ),
-
-          Positioned(
-            top: 50,
-            left: MediaQuery.of(context).size.width * 0.3 - (_cloudController.value * 0.4 * MediaQuery.of(context).size.width),
-            child: Opacity(
-              opacity: 0.6,
-              child: Icon(
-                Icons.cloud,
-                size: 60,
-                color: isDarkMode ? Colors.white.withOpacity(0.5) : Colors.black38,
-              ),
-            ),
-          ),
-
-          // Effet de reflet sur l'eau - animation subtile
+          // Effet de vagues stylisées en bas (similaire à des dunes)
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            height: MediaQuery.of(context).size.height * 0.3,
             child: AnimatedBuilder(
               animation: _reflectionController,
               builder: (context, child) {
-                return ShaderMask(
-                  shaderCallback: (rect) {
-                    return LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.white.withOpacity(0.1 + (_reflectionController.value * 0.05)),
-                        Colors.white.withOpacity(0.05),
-                      ],
-                      stops: [0.0, 0.2 + (_reflectionController.value * 0.1), 1.0],
-                    ).createShader(rect);
-                  },
-                  blendMode: BlendMode.modulate,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment(
-                          -1.0 + (math.sin(_reflectionController.value * math.pi) * 0.1),
-                          0,
-                        ),
-                        end: Alignment(
-                          1.0 + (math.sin(_reflectionController.value * math.pi) * 0.1),
-                          0,
-                        ),
-                        colors: [
-                          Colors.white.withOpacity(0.1),
-                          Colors.white.withOpacity(0.2),
-                          Colors.white.withOpacity(0.1),
-                        ],
-                      ),
-                    ),
+                return CustomPaint(
+                  painter: WavePainter(
+                    animation: _reflectionController,
+                    isDarkMode: isDarkMode,
                   ),
+                  child: Container(height: 120),
                 );
               },
             ),
           ),
 
-          // Overlay très léger pour assurer la lisibilité - beaucoup plus subtil maintenant
+          // Overlay très léger pour assurer la lisibilité
           Container(
             color: isDarkMode
                 ? Colors.black.withOpacity(0.1)
                 : Colors.black.withOpacity(0.05),
           ),
 
-          // Contenu directement sur l'image sans cadre
+          // Contenu principal
           AnimatedOpacity(
             opacity: _textOpacity,
             duration: const Duration(seconds: 1),
@@ -367,7 +338,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   const SizedBox(height: 20),
 
                   Text(
-                    'Découvrez les conditions météorologiques en temps réel pour vos villes préférées.',
+                    'Découvrez les conditions météorologiques en temps réel pour les régions du Sénégal.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 18,
@@ -413,9 +384,27 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   // Logo animé avec effets météo
   Widget _buildAnimatedLogo(bool isDarkMode) {
-    return SizedBox(
-      height: 110,
-      width: 110,
+    return Container(
+      width: 120,
+      height: 120,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: isDarkMode
+              ? [Color(0xFF1A3A6B), Color(0xFF0D253F)]
+              : [Color(0xFF64B5F6), Color(0xFF1976D2)],
+          center: Alignment(0.1, -0.2),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDarkMode
+                ? Colors.blue.withOpacity(0.2)
+                : Colors.blue.withOpacity(0.4),
+            blurRadius: 15,
+            spreadRadius: 1,
+          )
+        ],
+      ),
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -424,15 +413,15 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             animation: _buttonPulseController,
             builder: (context, child) {
               return Container(
-                width: 100 + (_buttonPulseController.value * 15),
-                height: 100 + (_buttonPulseController.value * 15),
+                width: 80 + (_buttonPulseController.value * 15),
+                height: 80 + (_buttonPulseController.value * 15),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
                       isDarkMode
                           ? Colors.blueAccent.withOpacity(0.7 - (_buttonPulseController.value * 0.3))
-                          : Colors.black.withOpacity(0.4 - (_buttonPulseController.value * 0.1)),
+                          : Colors.white.withOpacity(0.8 - (_buttonPulseController.value * 0.3)),
                       Colors.transparent,
                     ],
                     stops: const [0.2, 1.0],
@@ -442,73 +431,58 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             },
           ),
 
-          // Icône nuage animée
+          // Symboles météo
           Icon(
-            Icons.cloud,
-            size: 70,
-            color: isDarkMode ? Colors.lightBlue[100] : Colors.black87,
+            Icons.wb_sunny,
+            size: 36,
+            color: isDarkMode ? Colors.amber : Colors.orange,
           )
               .animate(onPlay: (controller) => controller.repeat(reverse: true))
-              .scale(
-            begin: const Offset(1.0, 1.0),
-            end: const Offset(1.15, 1.15),
-            duration: const Duration(seconds: 2),
-            curve: Curves.easeInOut,
-          ),
-
-          // Petits nuages animés autour
-          Positioned(
-            top: 15,
-            right: 5,
-            child: Icon(
-              Icons.cloud,
-              size: 20,
-              color: isDarkMode ? Colors.lightBlue[100]!.withOpacity(0.7) : Colors.black54,
-            )
-                .animate(onPlay: (controller) => controller.repeat(reverse: true))
-                .moveY(
-              begin: 0,
-              end: -5,
-              duration: const Duration(seconds: 3),
-              curve: Curves.easeInOut,
-            )
-                .fadeIn(duration: const Duration(seconds: 1))
-                .fadeOut(delay: const Duration(seconds: 3), duration: const Duration(seconds: 1)),
+              .rotate(
+            begin: 0,
+            end: 0.1,
+            duration: const Duration(seconds: 3),
+          )
+              .moveY(
+            begin: 0,
+            end: -5,
+            duration: const Duration(seconds: 3),
           ),
 
           Positioned(
-            bottom: 15,
-            left: 10,
+            bottom: 28,
+            right: 25,
             child: Icon(
               Icons.cloud,
-              size: 15,
-              color: isDarkMode ? Colors.lightBlue[100]!.withOpacity(0.7) : Colors.black54,
+              size: 30,
+              color: isDarkMode ? Colors.grey[300] : Colors.white,
             )
                 .animate(onPlay: (controller) => controller.repeat(reverse: true))
                 .moveX(
               begin: 0,
               end: 5,
-              duration: const Duration(seconds: 2, milliseconds: 500),
-              curve: Curves.easeInOut,
+              duration: const Duration(seconds: 4),
             )
-                .fadeIn(duration: const Duration(seconds: 1))
-                .fadeOut(delay: const Duration(seconds: 2), duration: const Duration(seconds: 1)),
+                .scale(
+              begin: const Offset(1, 1),
+              end: const Offset(1.1, 1.1),
+              duration: const Duration(seconds: 4),
+            ),
           ),
 
-          // Effet de goutte de pluie
           Positioned(
-            bottom: 10,
-            right: 25,
+            bottom: 40,
+            left: 25,
             child: Icon(
               Icons.water_drop,
-              size: 10,
-              color: isDarkMode ? Colors.lightBlue[100] : Colors.black87,
+              size: 18,
+              color: isDarkMode ? Colors.lightBlue[100] : Colors.lightBlue[300],
             )
                 .animate(onPlay: (controller) => controller.repeat())
                 .moveY(
-              begin: -15,
-              end: 15,
-              duration: const Duration(seconds: 1, milliseconds: 500),
+              begin: -10,
+              end: 10,
+              duration: const Duration(seconds: 1, milliseconds: 300),
               curve: Curves.easeIn,
             )
                 .fadeIn(duration: const Duration(milliseconds: 300))
@@ -516,10 +490,16 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           ),
         ],
       ),
+    ).animate()
+        .scale(
+      begin: const Offset(0.5, 0.5),
+      end: const Offset(1, 1),
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.elasticOut,
     );
   }
 
-  // Bouton adapté au thème
+  // Bouton adapté au thème avec animations
   Widget _buildButton({
     required String text,
     required IconData icon,
@@ -528,16 +508,14 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     required bool isDarkMode,
   }) {
     final buttonColor = isDarkMode
-        ? const Color(0xFF1E3C64).withOpacity(0.7) // Bleu foncé pour le thème sombre
-        : Colors.black.withOpacity(0.5);          // Noir semi-transparent pour le thème clair
+        ? const Color(0xFF1E3C64).withOpacity(0.8)
+        : Colors.blueAccent.withOpacity(0.8);
 
     final borderColor = isDarkMode
         ? Colors.lightBlue.withOpacity(0.6)
-        : Colors.black.withOpacity(0.4);
+        : Colors.white.withOpacity(0.6);
 
-    final textColor = isDarkMode
-        ? Colors.lightBlue[100]
-        : Colors.white;
+    final textColor = Colors.white;
 
     final shadowColor = isDarkMode
         ? Colors.blue.withOpacity(0.4)
@@ -566,11 +544,17 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               highlightColor: Colors.white.withOpacity(0.2),
               child: Ink(
                 decoration: BoxDecoration(
-                  color: buttonColor,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDarkMode
+                        ? [Color(0xFF1A237E), Color(0xFF0D47A1)]
+                        : [Color(0xFF42A5F5), Color(0xFF1976D2)],
+                  ),
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(
                     color: borderColor.withOpacity(0.5 + (0.3 * controller.value)),
-                    width: 2,
+                    width: 1.5,
                   ),
                 ),
                 child: Padding(
@@ -639,4 +623,138 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       ),
     );
   }
+}
+
+// Classe pour les particules (gouttes/étoiles) animées
+class Particle {
+  double x;
+  double y;
+  double size;
+  double speed;
+  double opacity;
+
+  Particle({
+    required this.x,
+    required this.y,
+    required this.size,
+    required this.speed,
+    required this.opacity,
+  });
+
+  factory Particle.random() {
+    return Particle(
+      x: math.Random().nextDouble(),
+      y: math.Random().nextDouble(),
+      size: 1 + math.Random().nextDouble() * 3,
+      speed: 0.001 + math.Random().nextDouble() * 0.003,
+      opacity: 0.3 + math.Random().nextDouble() * 0.7,
+    );
+  }
+}
+
+// Painter pour dessiner les particules
+class ParticlePainter extends CustomPainter {
+  final List<Particle> particles;
+  final Animation<double> animation;
+  final bool isDarkMode;
+
+  ParticlePainter({
+    required this.particles,
+    required this.animation,
+    required this.isDarkMode,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (var particle in particles) {
+      // Calculer la position actuelle de la particule
+      double yPos = (particle.y + (animation.value * particle.speed)) % 1.0;
+
+      final paint = Paint()
+        ..color = isDarkMode
+            ? Colors.white.withOpacity(particle.opacity * 0.7)
+            : Colors.white.withOpacity(particle.opacity);
+
+      canvas.drawCircle(
+        Offset(particle.x * size.width, yPos * size.height),
+        particle.size,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+// Painter pour les vagues stylisées
+class WavePainter extends CustomPainter {
+  final Animation<double> animation;
+  final bool isDarkMode;
+
+  WavePainter({
+    required this.animation,
+    required this.isDarkMode,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = isDarkMode
+          ? Color(0xFF142850).withOpacity(0.4)
+          : Colors.white.withOpacity(0.3)
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+
+    // Point de départ en bas à gauche
+    path.moveTo(0, size.height);
+
+    // Première vague
+    double amplitude = size.height * 0.1;
+    double wavePhase = animation.value * math.pi * 2;
+
+    for (int i = 0; i <= size.width.toInt(); i++) {
+      double dx = i.toDouble();
+      double dy = size.height -
+          amplitude * math.sin((dx / size.width * 4 * math.pi) + wavePhase) -
+          (size.height * 0.2);
+      path.lineTo(dx, dy);
+    }
+
+    // Fermer le chemin
+    path.lineTo(size.width, size.height);
+    path.close();
+
+    canvas.drawPath(path, paint);
+
+    // Deuxième vague plus basse
+    final paint2 = Paint()
+      ..color = isDarkMode
+          ? Color(0xFF0D253F).withOpacity(0.6)
+          : Colors.white.withOpacity(0.2)
+      ..style = PaintingStyle.fill;
+
+    final path2 = Path();
+    path2.moveTo(0, size.height);
+
+    amplitude = size.height * 0.08;
+    wavePhase = -animation.value * math.pi * 2;
+
+    for (int i = 0; i <= size.width.toInt(); i++) {
+      double dx = i.toDouble();
+      double dy = size.height -
+          amplitude * math.sin((dx / size.width * 3 * math.pi) + wavePhase) -
+          (size.height * 0.1);
+      path2.lineTo(dx, dy);
+    }
+
+    path2.lineTo(size.width, size.height);
+    path2.close();
+
+    canvas.drawPath(path2, paint2);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

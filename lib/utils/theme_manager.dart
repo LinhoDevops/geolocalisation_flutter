@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 
 class ThemeManager {
   // Couleurs personnalisées pour thème clair
-  static const Color primaryLight = Color(0xFF1565C0);
-  static const Color secondaryLight = Color(0xFF039BE5);
+  static const Color primaryLight = Color(0xFF1976D2);
+  static const Color secondaryLight = Color(0xFF42A5F5);
   static const Color accentLight = Color(0xFF00B0FF);
 
   // Couleurs personnalisées pour thème sombre
   static const Color primaryDark = Color(0xFF0D47A1);
-  static const Color secondaryDark = Color(0xFF0288D1);
-  static const Color accentDark = Color(0xFF40C4FF);
+  static const Color secondaryDark = Color(0xFF1565C0);
+  static const Color accentDark = Color(0xFF2979FF);
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -22,12 +22,12 @@ class ThemeManager {
         tertiary: accentLight,
         brightness: Brightness.light,
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         centerTitle: true,
         elevation: 0,
         backgroundColor: primaryLight,
         foregroundColor: Colors.white,
-        titleTextStyle: const TextStyle(
+        titleTextStyle: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
           letterSpacing: 0.5,
@@ -65,6 +65,20 @@ class ThemeManager {
           borderRadius: BorderRadius.all(Radius.circular(10)),
         ),
       ),
+      scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+      buttonTheme: ButtonThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
+        ),
+        buttonColor: primaryLight,
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: primaryLight,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
     );
   }
 
@@ -79,11 +93,11 @@ class ThemeManager {
         tertiary: accentDark,
         brightness: Brightness.dark,
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         centerTitle: true,
         elevation: 0,
         backgroundColor: primaryDark,
-        titleTextStyle: const TextStyle(
+        titleTextStyle: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
           letterSpacing: 0.5,
@@ -119,6 +133,20 @@ class ThemeManager {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(10)),
+        ),
+      ),
+      scaffoldBackgroundColor: const Color(0xFF0D1B2A),
+      buttonTheme: ButtonThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
+        ),
+        buttonColor: primaryDark,
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: primaryDark,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
         ),
       ),
     );

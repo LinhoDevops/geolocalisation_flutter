@@ -11,7 +11,7 @@ class ProgressBar extends StatelessWidget {
       width: double.infinity,
       height: 25,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.6),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -23,6 +23,16 @@ class ProgressBar extends StatelessWidget {
       ),
       child: Stack(
         children: [
+          // Base de la barre
+          Container(
+            width: double.infinity,
+            height: 25,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+
+          // Partie remplie de la barre
           AnimatedContainer(
             duration: const Duration(milliseconds: 500),
             curve: Curves.easeOutCubic,
@@ -47,6 +57,26 @@ class ProgressBar extends StatelessWidget {
               ],
             ),
           ),
+
+          // Petites bulles d'animation sur la barre
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 800),
+            left: (MediaQuery.of(context).size.width * progress) - 30,
+            child: Opacity(
+              opacity: progress < 0.1 ? 0.0 : 1.0,
+              child: Container(
+                width: 12,
+                height: 12,
+                margin: const EdgeInsets.only(top: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.4),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ),
+
+          // Texte de pourcentage
           Center(
             child: Text(
               '${(progress * 100).toInt()}%',

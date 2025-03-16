@@ -68,7 +68,7 @@ class WeatherDetailCard extends StatelessWidget {
                           size: 24,
                         ),
                         const SizedBox(width: 8),
-                        Text(
+                        const Text(
                           'Température',
                           style: TextStyle(
                             fontSize: 18,
@@ -138,7 +138,7 @@ class WeatherDetailCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   description,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),

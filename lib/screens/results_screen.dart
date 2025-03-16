@@ -62,7 +62,7 @@ class ResultsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Découvrez les conditions météorologiques pour ${weatherData.length} villes du monde',
+                    'Découvrez les conditions météorologiques pour ${weatherData.length} villes du Sénégal',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.7),
                     ),
